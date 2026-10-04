@@ -1,6 +1,6 @@
 # Banco de dados (Supabase / Postgres)
 
-Esquema completo: [`supabase/migrations/0001_init.sql`](../supabase/migrations/0001_init.sql) + [`0002_provas_anteriores.sql`](../supabase/migrations/0002_provas_anteriores.sql) + [`0003_participacao.sql`](../supabase/migrations/0003_participacao.sql) + [`0004_estudo_avancado.sql`](../supabase/migrations/0004_estudo_avancado.sql).
+Esquema completo: [`supabase/migrations/0001_init.sql`](../supabase/migrations/0001_init.sql) + [`0002_provas_anteriores.sql`](../supabase/migrations/0002_provas_anteriores.sql) + [`0003_participacao.sql`](../supabase/migrations/0003_participacao.sql) + [`0004_estudo_avancado.sql`](../supabase/migrations/0004_estudo_avancado.sql) + [`0005_sessao_prova.sql`](../supabase/migrations/0005_sessao_prova.sql).
 
 ## Diagrama
 
@@ -24,7 +24,7 @@ auth.users ──1:1── membros (allowlist)
 | `materias` | sim | por concurso (e opcionalmente cargo); `nome_normalizado` gerado |
 | `topicos` | sim | por matéria |
 | `topico_progresso` | **individual** | PK (`user_id`, `topico_id`); linha existe = estudado. `revisoes` (0..3) e `proxima_revisao` (default amanhã só para marcações novas) — revisão espaçada 1/7/30 dias (0004) |
-| `sessoes_estudo` | **individual, leitura entre membros** | `concurso_id`, `materia_id?`, `dia`, `minutos` (1..1440). Cada um grava só as suas; os dois leem (comparação) (0004) |
+| `sessoes_estudo` | **individual, leitura entre membros** | `concurso_id`, `materia_id?`, `prova` (tempo de prova/simulado, sempre sem matéria — 0005), `dia`, `minutos` (1..1440). Cada um grava só as suas; os dois leem (comparação) (0004) |
 | `caderno_erros` | **individual** | `concurso_id`, `prova_id?`, `materia_id?`, `questao?`, `descricao`, `revisado` (0004) |
 | `provas_anteriores` | sim | por concurso: `cargo`, `orgao`, `banca`, `ano`, `prova_url`, `gabarito_url`, `observacoes` (0002) |
 | `participacao` | **individual** | PK (`user_id`, `concurso_id`): `inscrito`, `boleto_pago`, `cartao_confirmacao`, `local_prova`, `hospedagem`, `nota`, `classificacao`, `aprovado` (0003). Linha criada no primeiro clique (upsert parcial) |

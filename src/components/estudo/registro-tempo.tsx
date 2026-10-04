@@ -11,6 +11,8 @@ type Cronometro = { inicio: number | null; acumulado: number; materiaId: string 
 /* Cronômetro guardado no localStorage (sobrevive a recarregar a página). Só conveniência local:
    o tempo só vale depois de "Encerrar e salvar". */
 const EVENTO = "cronometro-mudou";
+/* Valor do select para tempo resolvendo prova/simulado (sessão sem matéria, prova = true). */
+const PROVA = "prova";
 const chave = (concursoId: string) => `cronometro:${concursoId}`;
 
 function ler(concursoId: string): string | null {
@@ -112,7 +114,8 @@ export function RegistroTempo({ concursoId, materias, hoje, minutosHoje, minutos
     startTransition(async () => {
       const r = await registrarSessao({
         concurso_id: concursoId,
-        materia_id: s.materia || null,
+        materia_id: s.materia && s.materia !== PROVA ? s.materia : null,
+        prova: s.materia === PROVA,
         dia: s.dia,
         minutos: s.minutos,
       });
@@ -149,6 +152,7 @@ export function RegistroTempo({ concursoId, materias, hoje, minutosHoje, minutos
           onChange={(e) => setMateriaLivre(e.target.value)}
         >
           <option value="">Geral (sem matéria)</option>
+          <option value={PROVA}>Prova</option>
           {materias.map((m) => (
             <option key={m.id} value={m.id}>
               {m.nome}
@@ -246,6 +250,7 @@ function RegistroManual({
         <span className="rotulo">Matéria</span>
         <select className="campo mt-1 w-auto py-1" value={materia} onChange={(e) => setMateria(e.target.value)}>
           <option value="">Geral</option>
+          <option value={PROVA}>Prova</option>
           {materias.map((m) => (
             <option key={m.id} value={m.id}>
               {m.nome}

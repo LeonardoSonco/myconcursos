@@ -93,7 +93,7 @@ Coluna **Estudo** (e linha na ficha mobile) com a barra de progresso do usuário
 
 ## Estudo (geral e por concurso)
 
-- **Cronômetro** na página de estudo do concurso: escolher matéria (ou "Geral"), iniciar/pausar/continuar, "Encerrar e salvar" grava os minutos. Sobrevive a recarregar a página (fica no navegador). Registro manual: minutos + dia + matéria.
+- **Cronômetro** na página de estudo do concurso: escolher matéria (ou "Geral", ou "Prova" para tempo resolvendo prova/simulado), iniciar/pausar/continuar, "Encerrar e salvar" grava os minutos. Sobrevive a recarregar a página (fica no navegador). Registro manual: minutos + dia + matéria.
 - **Revisão espaçada**: ao marcar um tópico, ele volta para revisão em 1 dia, depois 7, depois 30, e sai do ciclo. No checklist aparece o carimbo "revisar n/3"; em `/estudo`, a lista "Revisões de hoje" (inclui atrasadas). Desmarcar o tópico zera o ciclo.
 - **Caderno de erros**: em cada prova guardada, "caderno de erros (n)" — número da questão, matéria, o que errou. Em `/estudo`, todos os erros agrupados por matéria, com "revisado" (risca) e opção de ver os revisados.
 - **Horas estudadas** em `/estudo`: barras dos últimos 7 dias para cada um dos dois usuários (mesma escala), totais de 7 e 28 dias.

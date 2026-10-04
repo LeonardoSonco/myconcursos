@@ -144,3 +144,4 @@ Ordem sugerida: 6 → 7 → 8 → 9 (decisões práticas, rápidas); depois 11 +
 | `0002_provas_anteriores.sql` | **não — aplicar no SQL Editor** | provas guardadas + resolução individual |
 | `0003_participacao.sql` | **não — aplicar no SQL Editor** | participação individual (inscrição, hospedagem, resultado) + preferências de viagem |
 | `0004_estudo_avancado.sql` | **não — aplicar no SQL Editor** | sessões de estudo, revisão espaçada (colunas em `topico_progresso`), caderno de erros |
+| `0005_sessao_prova.sql` | **não — aplicar no SQL Editor** | coluna `prova` em `sessoes_estudo` (opção "Prova" no cronômetro) |

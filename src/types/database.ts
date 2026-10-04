@@ -357,6 +357,7 @@ export type Database = {
           user_id: string;
           concurso_id: string;
           materia_id: string | null;
+          prova: boolean;
           dia: string;
           minutos: number;
           criado_em: string;
@@ -366,10 +367,11 @@ export type Database = {
           user_id?: string;
           concurso_id: string;
           materia_id?: string | null;
+          prova?: boolean;
           dia?: string;
           minutos: number;
         };
-        Update: { materia_id?: string | null; dia?: string; minutos?: number };
+        Update: { materia_id?: string | null; prova?: boolean; dia?: string; minutos?: number };
         Relationships: [
           {
             foreignKeyName: "sessoes_estudo_concurso_id_fkey";
