@@ -145,9 +145,9 @@ export function MinhaParticipacao({ concursoId, participacao, realizado, taxa, o
       {/* Etapa 7 — custo */}
       <div>
         <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
-          <span className="rotulo">Custo para prestar</span>
+          <span className="rotulo">Custos</span>
           <label className="inline-flex items-center gap-2 text-sm">
-            <span className="text-tinta-2">Hospedagem R$</span>
+            <span className="text-tinta-2">Hospedagem</span>
             <input
               className="campo num w-28 py-0.5 text-right text-sm"
               inputMode="decimal"

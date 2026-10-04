@@ -72,7 +72,7 @@ Colunas, nesta ordem:
 No detalhe do concurso, seção "Provas anteriores":
 
 - **Buscar** (sem API — não existe API pública gratuita de provas): links montados com o cargo (principal por padrão; seletor se houver vários) e a banca — PCI Concursos `/provas/<cargo>` e `/provas/<banca>`, Google restrito ao PCI com cargo + banca, e Google por PDF de prova/gabarito. Cargo é limpo de carga horária e parênteses ("Médico Veterinário - 40h" → "Médico Veterinário").
-- **Guardar**: provas achadas viram registros do concurso (cargo, ano, órgão, banca, link da prova, link do gabarito, observações). Compartilhadas entre os dois usuários.
+- **Guardar**: provas achadas viram registros do concurso (cargo, ano, órgão, banca, link da prova, link do gabarito, observações). Compartilhadas entre os dois usuários; dá para editar (lápis) ou excluir.
 - **Resolvi**: marcação individual por usuário, com acertos/questões opcionais (mostra `38/50 · 76%`).
 
 ## Minha participação (individual)

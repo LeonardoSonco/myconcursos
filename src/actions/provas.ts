@@ -24,6 +24,26 @@ export async function adicionarProva(input: ProvaAnteriorInput): Promise<ProvaRe
   return { ok: true, mensagem: "Prova adicionada." };
 }
 
+export async function editarProva(provaId: string, input: ProvaAnteriorInput): Promise<ProvaResultado> {
+  if (!uuid.safeParse(provaId).success) return { ok: false, mensagem: "Prova inválida." };
+  const parsed = provaAnteriorSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, mensagem: "Confira os campos destacados.", erros: errosPorCampo(parsed.error) };
+  }
+
+  const { concurso_id, ...campos } = parsed.data;
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("provas_anteriores")
+    .update(campos)
+    .eq("id", provaId)
+    .eq("concurso_id", concurso_id);
+  if (error) return { ok: false, mensagem: error.message };
+
+  revalidatePath(`/concursos/${concurso_id}`);
+  return { ok: true, mensagem: "Prova atualizada." };
+}
+
 export async function excluirProva(concursoId: string, provaId: string): Promise<ProvaResultado> {
   if (!uuid.safeParse(concursoId).success || !uuid.safeParse(provaId).success) {
     return { ok: false, mensagem: "IDs inválidos." };

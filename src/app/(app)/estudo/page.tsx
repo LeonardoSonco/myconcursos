@@ -140,7 +140,7 @@ export default async function EstudoGeralPage() {
         ) : (
           <div className="grid gap-8 sm:grid-cols-2">
             {porPessoa.map((p) => (
-              <figure key={p.nome}>
+              <figure key={p.nome} className="border border-pauta p-2">
                 <figcaption className="mb-2 flex flex-wrap items-baseline justify-between gap-2 text-sm">
                   <span>{p.nome}</span>
                   <span className="text-tinta-2">

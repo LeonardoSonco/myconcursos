@@ -1,14 +1,14 @@
 "use client";
 
-import { ExternalLink, Plus, X } from "lucide-react";
+import { ExternalLink, Pencil, Plus, X } from "lucide-react";
 import { useState, useTransition } from "react";
-import { adicionarProva, excluirProva, marcarProvaResolvida, type ProvaResultado } from "@/actions/provas";
+import { adicionarProva, editarProva, excluirProva, marcarProvaResolvida, type ProvaResultado } from "@/actions/provas";
 import { CadernoProva } from "@/components/provas/caderno-erros";
 import { Campo } from "@/components/ui/campos";
 import { Girando } from "@/components/ui/girando";
 import { linksBuscaProvas } from "@/lib/provas/busca";
 import { errosPorCampo } from "@/lib/schemas/concurso";
-import { provaAnteriorSchema } from "@/lib/schemas/prova";
+import { provaAnteriorSchema, type ProvaAnteriorInput } from "@/lib/schemas/prova";
 import type { ErroCaderno, ProvaAnterior } from "@/types/database";
 
 export type ProvaComResolucao = ProvaAnterior & {
@@ -122,6 +122,7 @@ function LinhaProva({
   erros: ErroCaderno[];
 }) {
   const [cadernoAberto, setCadernoAberto] = useState(false);
+  const [editando, setEditando] = useState(false);
   const [pending, startTransition] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
   const [anotando, setAnotando] = useState(false);
@@ -169,8 +170,18 @@ function LinhaProva({
         )}
         <button
           type="button"
+          aria-label={`Editar prova ${prova.cargo} ${prova.ano ?? ""}`}
+          aria-expanded={editando}
+          className="self-center text-tinta-2 hover:text-tinta cursor-pointer"
+          disabled={pending}
+          onClick={() => setEditando((v) => !v)}
+        >
+          <Pencil size={12} strokeWidth={1.5} />
+        </button>
+        <button
+          type="button"
           aria-label={`Excluir prova ${prova.cargo} ${prova.ano ?? ""}`}
-          className="self-center text-tinta-2 hover:text-acento"
+          className="self-center text-tinta-2 hover:text-acento cursor-pointer"
           disabled={pending}
           onClick={() => {
             if (confirm(`Excluir a prova "${prova.cargo}${prova.ano ? ` (${prova.ano})` : ""}"? Vale para os dois usuários.`)) {
@@ -184,10 +195,10 @@ function LinhaProva({
 
       <span />
       <span className="col-span-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-        <label className="inline-flex items-center gap-1.5">
+        <label className="inline-flex items-center gap-1.5 cursor-pointer">
           <input
             type="checkbox"
-            className="accent-[var(--tinta)]"
+            className="accent-[var(--tinta)] cursor-pointer"
             checked={!!nota}
             disabled={pending}
             onChange={(e) => executar(() => marcarProvaResolvida(concursoId, prova.id, e.target.checked))}
@@ -257,6 +268,18 @@ function LinhaProva({
         </button>
         {msg && <span className="surgir text-acento">{msg}</span>}
       </span>
+      {editando && (
+        <div className="col-span-3 sm:col-start-2">
+          <FormProva
+            concursoId={concursoId}
+            inicial={prova}
+            rotuloSalvar="Salvar alterações"
+            salvar={(input) => editarProva(prova.id, input)}
+            onSalvo={() => setEditando(false)}
+            onFechar={() => setEditando(false)}
+          />
+        </div>
+      )}
       {cadernoAberto && (
         <div className="col-span-3 sm:col-start-2">
           <CadernoProva concursoId={concursoId} provaId={prova.id} materias={materias} erros={erros} />
@@ -276,34 +299,57 @@ function NovaProva({
   bancaPadrao: string;
 }) {
   const [aberto, setAberto] = useState(false);
-  const [cargo, setCargo] = useState(cargoPadrao);
-  const [ano, setAno] = useState("");
-  const [orgao, setOrgao] = useState("");
-  const [banca, setBanca] = useState(bancaPadrao);
-  const [provaUrl, setProvaUrl] = useState("");
-  const [gabaritoUrl, setGabaritoUrl] = useState("");
-  const [observacoes, setObservacoes] = useState("");
-  const [erros, setErros] = useState<Record<string, string>>({});
-  const [msg, setMsg] = useState<ProvaResultado | null>(null);
-  const [pending, startTransition] = useTransition();
 
   if (!aberto) {
     return (
-      <button
-        type="button"
-        className="botao mt-3"
-        onClick={() => {
-          setCargo(cargoPadrao);
-          setBanca(bancaPadrao);
-          setMsg(null);
-          setAberto(true);
-        }}
-      >
+      <button type="button" className="botao mt-3" onClick={() => setAberto(true)}>
         <Plus size={14} strokeWidth={1.5} /> Guardar prova
       </button>
     );
   }
 
+  return (
+    <FormProva
+      concursoId={concursoId}
+      inicial={{ cargo: cargoPadrao, banca: bancaPadrao }}
+      rotuloSalvar="Guardar prova"
+      salvar={adicionarProva}
+      limparAoSalvar
+      onFechar={() => setAberto(false)}
+    />
+  );
+}
+
+type ValoresProva = Partial<Pick<ProvaAnterior, "cargo" | "ano" | "orgao" | "banca" | "prova_url" | "gabarito_url" | "observacoes">>;
+
+/** Formulário de prova guardada: usado para criar (NovaProva) e para editar (LinhaProva). */
+function FormProva({
+  concursoId,
+  inicial,
+  rotuloSalvar,
+  salvar,
+  limparAoSalvar = false,
+  onSalvo,
+  onFechar,
+}: {
+  concursoId: string;
+  inicial: ValoresProva;
+  rotuloSalvar: string;
+  salvar: (input: ProvaAnteriorInput) => Promise<ProvaResultado>;
+  limparAoSalvar?: boolean;
+  onSalvo?: () => void;
+  onFechar: () => void;
+}) {
+  const [cargo, setCargo] = useState(inicial.cargo ?? "");
+  const [ano, setAno] = useState(inicial.ano?.toString() ?? "");
+  const [orgao, setOrgao] = useState(inicial.orgao ?? "");
+  const [banca, setBanca] = useState(inicial.banca ?? "");
+  const [provaUrl, setProvaUrl] = useState(inicial.prova_url ?? "");
+  const [gabaritoUrl, setGabaritoUrl] = useState(inicial.gabarito_url ?? "");
+  const [observacoes, setObservacoes] = useState(inicial.observacoes ?? "");
+  const [erros, setErros] = useState<Record<string, string>>({});
+  const [msg, setMsg] = useState<ProvaResultado | null>(null);
+  const [pending, startTransition] = useTransition();
   function enviar(e: React.FormEvent) {
     e.preventDefault();
     const payload = {
@@ -325,10 +371,11 @@ function NovaProva({
     setErros({});
     setMsg(null);
     startTransition(async () => {
-      const r = await adicionarProva(payload);
+      const r = await salvar(payload);
       setMsg(r);
       if (r.erros) setErros(r.erros);
-      if (r.ok) {
+      if (r.ok) onSalvo?.();
+      if (r.ok && limparAoSalvar) {
         setAno("");
         setOrgao("");
         setProvaUrl("");
@@ -396,9 +443,9 @@ function NovaProva({
       <div className="flex flex-wrap items-center gap-3">
         <button className="botao botao-primario" disabled={pending} aria-busy={pending}>
           <Girando ativo={pending} />
-          {pending ? "Salvando…" : "Guardar prova"}
+          {pending ? "Salvando…" : rotuloSalvar}
         </button>
-        <button type="button" className="botao-texto text-sm" onClick={() => setAberto(false)}>
+        <button type="button" className="botao-texto text-sm" onClick={onFechar}>
           fechar
         </button>
         {msg && (
