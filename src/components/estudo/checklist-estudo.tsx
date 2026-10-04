@@ -9,12 +9,20 @@ import {
   excluirTopico,
   marcarTopicos,
   renomearMateria,
+  revisarTopico,
   type EstudoResultado,
 } from "@/actions/estudo";
 import { Girando } from "@/components/ui/girando";
 import { Progresso } from "@/components/ui/progresso";
 
-export type TopicoEstudo = { id: string; titulo: string; estudado: boolean };
+export type TopicoEstudo = {
+  id: string;
+  titulo: string;
+  estudado: boolean;
+  /** Próxima revisão (yyyy-mm-dd); null = sem revisão pendente. */
+  revisarEm: string | null;
+  revisoes: number;
+};
 export type MateriaEstudo = { id: string; nome: string; cargo: string | null; topicos: TopicoEstudo[] };
 
 type Marcacao = { ids: string[]; estudado: boolean };
@@ -23,9 +31,11 @@ type Marcar = (ids: string[], estudado: boolean) => void;
 export function ChecklistEstudo({
   concursoId,
   materias,
+  hoje,
 }: {
   concursoId: string;
   materias: MateriaEstudo[];
+  hoje: string;
 }) {
   const doServidor = new Set(materias.flatMap((m) => m.topicos.filter((t) => t.estudado).map((t) => t.id)));
   const [estudados, aplicar] = useOptimistic(doServidor, (atual: Set<string>, m: Marcacao) => {
@@ -48,6 +58,10 @@ export function ChecklistEstudo({
   };
 
   const total = materias.reduce((s, m) => s + m.topicos.length, 0);
+  const pendentes = materias.reduce(
+    (s, m) => s + m.topicos.filter((t) => estudados.has(t.id) && t.revisarEm && t.revisarEm <= hoje).length,
+    0,
+  );
   const feitos = materias.reduce((s, m) => s + m.topicos.filter((t) => estudados.has(t.id)).length, 0);
 
   return (
@@ -78,6 +92,12 @@ export function ChecklistEstudo({
           )}
         </div>
         <Progresso feitos={feitos} total={total} grande />
+        {pendentes > 0 && (
+          <p className="mt-2 text-sm">
+            <span className="num">{pendentes}</span> {pendentes === 1 ? "tópico para revisar" : "tópicos para revisar"}{" "}
+            hoje — marcados com <span className="rotulo">revisar</span> abaixo.
+          </p>
+        )}
         {erro && <p className="surgir mt-2 text-sm text-acento">{erro}</p>}
       </div>
 
@@ -97,6 +117,7 @@ export function ChecklistEstudo({
               marcar={marcar}
               ocultarEstudados={ocultar}
               abertaInicial={i === 0}
+              hoje={hoje}
             />
           ))}
         </ul>
@@ -114,6 +135,7 @@ function MateriaBloco({
   marcar,
   ocultarEstudados,
   abertaInicial,
+  hoje,
 }: {
   concursoId: string;
   materia: MateriaEstudo;
@@ -121,6 +143,7 @@ function MateriaBloco({
   marcar: Marcar;
   ocultarEstudados: boolean;
   abertaInicial: boolean;
+  hoje: string;
 }) {
   const [aberta, setAberta] = useState(abertaInicial);
   const [editando, setEditando] = useState(false);
@@ -234,6 +257,18 @@ function MateriaBloco({
                         {t.titulo}
                       </span>
                     </label>
+                    {feito && t.revisarEm && t.revisarEm <= hoje && (
+                      <button
+                        type="button"
+                        className="carimbo shrink-0 cursor-pointer text-tinta transition-opacity hover:opacity-70"
+                        style={{ "--giro": "-1deg" } as React.CSSProperties}
+                        title={`Revisão ${t.revisoes + 1} de 3 — clique quando revisar`}
+                        disabled={pending}
+                        onClick={() => executar(() => revisarTopico(concursoId, t.id))}
+                      >
+                        revisar {t.revisoes + 1}/3
+                      </button>
+                    )}
                     <button
                       type="button"
                       aria-label={`Excluir tópico ${t.titulo}`}

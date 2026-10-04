@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { adicionarMaterias } from "@/lib/concursos/materias";
+import { hojeISO } from "@/lib/format";
+import { proximaRevisao } from "@/lib/revisao";
 import { createClient } from "@/lib/supabase/server";
 
 export type EstudoResultado = { ok: boolean; mensagem: string };
@@ -24,6 +26,7 @@ function revalidar(concursoId: string) {
   revalidatePath(`/concursos/${concursoId}/estudo`);
   revalidatePath(`/concursos/${concursoId}`);
   revalidatePath("/materias-em-comum");
+  revalidatePath("/estudo");
 }
 
 function erro(e: unknown): EstudoResultado {
@@ -134,6 +137,30 @@ export async function excluirTopico(concursoId: string, topicoId: string): Promi
   const supabase = await createClient();
   const { error } = await supabase.from("topicos").delete().eq("id", topicoId);
   if (error) return { ok: false, mensagem: error.message };
+  revalidar(concursoId);
+  return { ok: true, mensagem: "" };
+}
+
+/** Registra uma revisão feita hoje e agenda a próxima (+7, +30, depois conclui). */
+export async function revisarTopico(concursoId: string, topicoId: string): Promise<EstudoResultado> {
+  if (!uuid.safeParse(concursoId).success || !uuid.safeParse(topicoId).success) {
+    return { ok: false, mensagem: "IDs inválidos." };
+  }
+  const supabase = await createClient();
+  const { data: atual } = await supabase
+    .from("topico_progresso")
+    .select("revisoes")
+    .eq("topico_id", topicoId)
+    .maybeSingle();
+  if (!atual) return { ok: false, mensagem: "Tópico não está marcado como estudado." };
+
+  const feitas = Math.min(atual.revisoes + 1, 3);
+  const { error } = await supabase
+    .from("topico_progresso")
+    .update({ revisoes: feitas, proxima_revisao: proximaRevisao(feitas, hojeISO()) })
+    .eq("topico_id", topicoId);
+  if (error) return { ok: false, mensagem: error.message };
+
   revalidar(concursoId);
   return { ok: true, mensagem: "" };
 }

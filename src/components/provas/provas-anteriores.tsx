@@ -3,12 +3,13 @@
 import { ExternalLink, Plus, X } from "lucide-react";
 import { useState, useTransition } from "react";
 import { adicionarProva, excluirProva, marcarProvaResolvida, type ProvaResultado } from "@/actions/provas";
+import { CadernoProva } from "@/components/provas/caderno-erros";
 import { Campo } from "@/components/ui/campos";
 import { Girando } from "@/components/ui/girando";
 import { linksBuscaProvas } from "@/lib/provas/busca";
 import { errosPorCampo } from "@/lib/schemas/concurso";
 import { provaAnteriorSchema } from "@/lib/schemas/prova";
-import type { ProvaAnterior } from "@/types/database";
+import type { ErroCaderno, ProvaAnterior } from "@/types/database";
 
 export type ProvaComResolucao = ProvaAnterior & {
   resolvida: { acertos: number | null; questoes: number | null } | null;
@@ -19,9 +20,12 @@ type Props = {
   cargos: string[]; // principal primeiro
   banca: string | null;
   provas: ProvaComResolucao[];
+  materias: { id: string; nome: string }[];
+  /** Caderno de erros do usuário neste concurso. */
+  erros: ErroCaderno[];
 };
 
-export function ProvasAnteriores({ concursoId, cargos, banca, provas }: Props) {
+export function ProvasAnteriores({ concursoId, cargos, banca, provas, materias, erros }: Props) {
   const [cargo, setCargo] = useState(cargos[0] ?? "");
   const links = linksBuscaProvas(cargo, banca);
   const resolvidas = provas.filter((p) => p.resolvida).length;
@@ -90,7 +94,13 @@ export function ProvasAnteriores({ concursoId, cargos, banca, provas }: Props) {
         ) : (
           <ul className="border-t border-pauta">
             {provas.map((p) => (
-              <LinhaProva key={p.id} concursoId={concursoId} prova={p} />
+              <LinhaProva
+                key={p.id}
+                concursoId={concursoId}
+                prova={p}
+                materias={materias}
+                erros={erros.filter((e) => e.prova_id === p.id)}
+              />
             ))}
           </ul>
         )}
@@ -100,7 +110,18 @@ export function ProvasAnteriores({ concursoId, cargos, banca, provas }: Props) {
   );
 }
 
-function LinhaProva({ concursoId, prova }: { concursoId: string; prova: ProvaComResolucao }) {
+function LinhaProva({
+  concursoId,
+  prova,
+  materias,
+  erros,
+}: {
+  concursoId: string;
+  prova: ProvaComResolucao;
+  materias: { id: string; nome: string }[];
+  erros: ErroCaderno[];
+}) {
+  const [cadernoAberto, setCadernoAberto] = useState(false);
   const [pending, startTransition] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
   const [anotando, setAnotando] = useState(false);
@@ -226,8 +247,21 @@ function LinhaProva({ concursoId, prova }: { concursoId: string; prova: ProvaCom
             </button>
           </form>
         )}
+        <button
+          type="button"
+          className="botao-texto"
+          aria-expanded={cadernoAberto}
+          onClick={() => setCadernoAberto((a) => !a)}
+        >
+          caderno de erros ({erros.length})
+        </button>
         {msg && <span className="surgir text-acento">{msg}</span>}
       </span>
+      {cadernoAberto && (
+        <div className="col-span-3 sm:col-start-2">
+          <CadernoProva concursoId={concursoId} provaId={prova.id} materias={materias} erros={erros} />
+        </div>
+      )}
     </li>
   );
 }

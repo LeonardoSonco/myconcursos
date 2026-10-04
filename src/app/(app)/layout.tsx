@@ -16,13 +16,16 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <>
       <header className="border-b border-pauta">
-        <div className="mx-auto flex max-w-[1400px] items-baseline gap-6 px-4 py-3 md:px-6">
+        <div className="mx-auto flex max-w-[1400px] flex-wrap items-baseline gap-x-6 gap-y-2 px-4 py-3 md:px-6">
           <Link href="/" className="font-serif text-xl leading-none tracking-tight">
             <span className="text-tinta-2 italic">my </span> {" "}Concursos
           </Link>
-          <nav className="flex gap-4 text-sm">
+          <nav className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
             <Link href="/" className="botao-texto">
               Concursos
+            </Link>
+            <Link href="/estudo" className="botao-texto">
+              Estudo
             </Link>
             <Link href="/materias-em-comum" className="botao-texto">
               <span className="hidden sm:inline">Matérias em comum</span>

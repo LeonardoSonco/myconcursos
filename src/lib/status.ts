@@ -10,6 +10,10 @@ export const STATUS = [
   "resultado",
 ] as const satisfies readonly ConcursoStatus[];
 
+/** Prova já feita: o concurso sai da tabela principal e vai para a aba Realizados. */
+export const STATUS_REALIZADOS: readonly ConcursoStatus[] = ["prova_realizada", "resultado"];
+export const realizado = (s: ConcursoStatus) => STATUS_REALIZADOS.includes(s);
+
 export const STATUS_ROTULO: Record<ConcursoStatus, string> = {
   previsto: "Previsto",
   edital_publicado: "Edital publicado",

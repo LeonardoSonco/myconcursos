@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Fragment, useState } from "react";
 import { Carimbo } from "@/components/ui/carimbo";
 import { DataProva, PrazoInscricao } from "@/components/ui/datas";
+import { Progresso } from "@/components/ui/progresso";
 import {
   cargoPrincipal,
   contagemPrazo,
@@ -15,10 +16,16 @@ import {
   km,
   vagasTexto,
 } from "@/lib/format";
-import { STATUS, STATUS_ROTULO } from "@/lib/status";
+import { STATUS, STATUS_REALIZADOS, STATUS_ROTULO } from "@/lib/status";
 import type { CidadeBase, ConcursoCompleto, ConcursoStatus, Distancia } from "@/types/database";
 
-type Props = { concursos: ConcursoCompleto[]; cidades: CidadeBase[]; hoje: string };
+/** Linha da tabela: concurso + dados individuais do usuário logado. */
+export type ConcursoLinha = ConcursoCompleto & {
+  minha: { inscrito: boolean; nota: number | null; classificacao: number | null; aprovado: boolean | null } | null;
+  estudo: { feitos: number; total: number } | null;
+};
+
+type Props = { concursos: ConcursoLinha[]; cidades: CidadeBase[]; hoje: string; realizados: boolean };
 type Dir = "asc" | "desc";
 
 const PRAZO_OPCOES = [
@@ -28,12 +35,12 @@ const PRAZO_OPCOES = [
   { valor: "30", rotulo: "Vence em 30 dias" },
 ];
 
-function distanciaDe(c: ConcursoCompleto, cidadeId: number): Distancia | undefined {
+function distanciaDe(c: ConcursoLinha, cidadeId: number): Distancia | undefined {
   return c.concurso_distancias.find((d) => d.cidade_base_id === cidadeId);
 }
 
 /** Valor usado para ordenar cada coluna. null = sempre no fim. */
-function chaveOrdem(c: ConcursoCompleto, ordem: string, hoje: string): string | number | null {
+function chaveOrdem(c: ConcursoLinha, ordem: string, hoje: string): string | number | null {
   const principal = cargoPrincipal(c.cargos);
   switch (ordem) {
     case "lugar":
@@ -48,6 +55,10 @@ function chaveOrdem(c: ConcursoCompleto, ordem: string, hoje: string): string | 
       return c.banca?.toLocaleLowerCase("pt-BR") ?? null;
     case "prova":
       return c.prova_data;
+    case "estudo":
+      return c.estudo?.total ? c.estudo.feitos / c.estudo.total : null;
+    case "resultado":
+      return c.minha?.classificacao ?? null;
     case "prazo": {
       if (!c.inscricao_fim) return null;
       const d = diasAte(c.inscricao_fim, hoje);
@@ -62,7 +73,7 @@ function chaveOrdem(c: ConcursoCompleto, ordem: string, hoje: string): string | 
   }
 }
 
-export function TabelaConcursos({ concursos, cidades, hoje }: Props) {
+export function TabelaConcursos({ concursos, cidades, hoje, realizados }: Props) {
   const params = useSearchParams();
   const pathname = usePathname();
   const [expandidos, setExpandidos] = useState<Set<string>>(new Set());
@@ -139,7 +150,12 @@ export function TabelaConcursos({ concursos, cidades, hoje }: Props) {
     });
   })();
 
-  const urgentes = concursos.filter((c) => contagemPrazo(c.inscricao_fim, hoje)?.urgente).length;
+  // Alerta: prazo nesta semana e o usuário ainda não marcou "inscrito".
+  const urgentes = concursos.filter(
+    (c) => contagemPrazo(c.inscricao_fim, hoje)?.urgente && !c.minha?.inscrito,
+  ).length;
+  const statusVisiveis = STATUS.filter((s) => STATUS_REALIZADOS.includes(s) === realizados);
+  const semFiltros = realizados ? `${pathname}?aba=realizados` : pathname;
   const temFiltro = statusFiltro.length > 0 || prazoFiltro || salMin || distMax;
 
   const sort: Ordenacao = { ordem, dir, onOrdenar: ordenarPor };
@@ -150,7 +166,7 @@ export function TabelaConcursos({ concursos, cidades, hoje }: Props) {
       <div className="mb-4 flex flex-wrap items-end gap-x-6 gap-y-3 border-y border-pauta py-3">
         <fieldset className="flex flex-wrap items-center gap-x-2 gap-y-2">
           <legend className="rotulo mb-1.5">Status</legend>
-          {STATUS.map((s) => {
+          {statusVisiveis.map((s) => {
             const ativo = statusFiltro.includes(s);
             return (
               <button
@@ -235,11 +251,11 @@ export function TabelaConcursos({ concursos, cidades, hoje }: Props) {
         <div className="ml-auto flex items-center gap-4 text-sm text-tinta-2">
           {urgentes > 0 && (
             <span className="text-acento">
-              <span className="num">{urgentes}</span> com prazo nesta semana
+              <span className="num">{urgentes}</span> com prazo nesta semana sem inscrição
             </span>
           )}
           {temFiltro ? (
-            <a href={pathname} className="botao-texto">
+            <a href={semFiltros} className="botao-texto">
               Limpar filtros
             </a>
           ) : null}
@@ -271,8 +287,13 @@ export function TabelaConcursos({ concursos, cidades, hoje }: Props) {
                 <Th sort={sort} col="status">Status</Th>
                 <Th sort={sort} col="banca">Banca</Th>
                 <Th sort={sort}>Link</Th>
-                <Th sort={sort} col="prazo">Prazo inscrição</Th>
+                {realizados ? (
+                  <Th sort={sort} col="resultado">Resultado</Th>
+                ) : (
+                  <Th sort={sort} col="prazo">Prazo inscrição</Th>
+                )}
                 <Th sort={sort} col="prova">Prova</Th>
+                <Th sort={sort} col="estudo">Estudo</Th>
               </tr>
             </thead>
             <tbody>
@@ -344,10 +365,21 @@ export function TabelaConcursos({ concursos, cidades, hoje }: Props) {
                         )}
                       </td>
                       <td className="px-2 py-1.5 align-top whitespace-nowrap">
-                        <PrazoInscricao iso={c.inscricao_fim} hoje={hoje} />
+                        {realizados ? (
+                          <Resultado minha={c.minha} />
+                        ) : (
+                          <PrazoInscricao iso={c.inscricao_fim} hoje={hoje} inscrito={c.minha?.inscrito ?? false} />
+                        )}
                       </td>
                       <td className="px-2 py-1.5 align-top whitespace-nowrap">
                         <DataProva iso={c.prova_data} hoje={hoje} />
+                      </td>
+                      <td className="w-36 px-2 py-1.5 align-top">
+                        {c.estudo?.total ? (
+                          <Progresso feitos={c.estudo.feitos} total={c.estudo.total} className="pt-1.5" />
+                        ) : (
+                          <span className="text-tinta-2">—</span>
+                        )}
                       </td>
                     </tr>
                     {aberto &&
@@ -360,7 +392,7 @@ export function TabelaConcursos({ concursos, cidades, hoje }: Props) {
                           <td className="num px-2 py-1 text-right whitespace-nowrap">
                             {horasSalario(cg)}
                           </td>
-                          <td colSpan={cidades.length + 5} />
+                          <td colSpan={cidades.length + 6} />
                         </tr>
                       ))}
                   </Fragment>
@@ -405,18 +437,35 @@ export function TabelaConcursos({ concursos, cidades, hoje }: Props) {
                     <dt className="rotulo">Horas/Salário</dt>
                     <dd className="num">{horasSalario(principal)}</dd>
                   </div>
-                  <div>
-                    <dt className="rotulo">Inscrição até</dt>
-                    <dd>
-                      <PrazoInscricao iso={c.inscricao_fim} hoje={hoje} />
-                    </dd>
-                  </div>
+                  {realizados ? (
+                    <div>
+                      <dt className="rotulo">Resultado</dt>
+                      <dd>
+                        <Resultado minha={c.minha} />
+                      </dd>
+                    </div>
+                  ) : (
+                    <div>
+                      <dt className="rotulo">Inscrição até</dt>
+                      <dd>
+                        <PrazoInscricao iso={c.inscricao_fim} hoje={hoje} inscrito={c.minha?.inscrito ?? false} />
+                      </dd>
+                    </div>
+                  )}
                   <div>
                     <dt className="rotulo">Prova</dt>
                     <dd>
                       <DataProva iso={c.prova_data} hoje={hoje} />
                     </dd>
                   </div>
+                  {c.estudo?.total ? (
+                    <div className="col-span-2">
+                      <dt className="rotulo">Estudo</dt>
+                      <dd>
+                        <Progresso feitos={c.estudo.feitos} total={c.estudo.total} />
+                      </dd>
+                    </div>
+                  ) : null}
                   {cidades.map((cb) => {
                     const d = distanciaDe(c, cb.id);
                     return (
@@ -460,6 +509,27 @@ export function TabelaConcursos({ concursos, cidades, hoje }: Props) {
         </ul>
       )}
     </div>
+  );
+}
+
+function Resultado({ minha }: { minha: ConcursoLinha["minha"] }) {
+  if (!minha || (minha.nota == null && minha.classificacao == null && minha.aprovado == null)) {
+    return <span className="text-tinta-2">—</span>;
+  }
+  return (
+    <span className="inline-flex flex-col leading-tight">
+      <span className="num">
+        {minha.classificacao != null ? `${minha.classificacao}º` : "—"}
+        {minha.nota != null && (
+          <span className="text-tinta-2"> · {minha.nota.toLocaleString("pt-BR")} pts</span>
+        )}
+      </span>
+      {minha.aprovado != null && (
+        <span className={`text-xs ${minha.aprovado ? "text-tinta" : "text-tinta-2"}`}>
+          {minha.aprovado ? "aprovado" : "não aprovado"}
+        </span>
+      )}
+    </span>
   );
 }
 

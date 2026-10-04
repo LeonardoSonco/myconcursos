@@ -1,4 +1,4 @@
-// Escrito à mão espelhando supabase/migrations/ (0001_init.sql, 0002_provas_anteriores.sql).
+// Escrito à mão espelhando supabase/migrations/ (0001_init … 0004_estudo_avancado).
 // Pode ser substituído por: npx supabase gen types typescript --project-id <id> > src/types/database.ts
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
@@ -217,9 +217,21 @@ export type Database = {
         ];
       };
       topico_progresso: {
-        Row: { user_id: string; topico_id: string; estudado_em: string };
-        Insert: { user_id?: string; topico_id: string; estudado_em?: string };
-        Update: { estudado_em?: string };
+        Row: {
+          user_id: string;
+          topico_id: string;
+          estudado_em: string;
+          revisoes: number;
+          proxima_revisao: string | null;
+        };
+        Insert: {
+          user_id?: string;
+          topico_id: string;
+          estudado_em?: string;
+          revisoes?: number;
+          proxima_revisao?: string | null;
+        };
+        Update: { estudado_em?: string; revisoes?: number; proxima_revisao?: string | null };
         Relationships: [
           {
             foreignKeyName: "topico_progresso_topico_id_fkey";
@@ -291,6 +303,143 @@ export type Database = {
           },
         ];
       };
+      participacao: {
+        Row: {
+          user_id: string;
+          concurso_id: string;
+          inscrito: boolean;
+          boleto_pago: boolean;
+          cartao_confirmacao: boolean;
+          local_prova: string | null;
+          hospedagem: number | null;
+          nota: number | null;
+          classificacao: number | null;
+          aprovado: boolean | null;
+          atualizado_em: string;
+        };
+        Insert: {
+          user_id?: string;
+          concurso_id: string;
+          inscrito?: boolean;
+          boleto_pago?: boolean;
+          cartao_confirmacao?: boolean;
+          local_prova?: string | null;
+          hospedagem?: number | null;
+          nota?: number | null;
+          classificacao?: number | null;
+          aprovado?: boolean | null;
+        };
+        Update: Partial<Omit<Database["public"]["Tables"]["participacao"]["Insert"], "user_id" | "concurso_id">>;
+        Relationships: [
+          {
+            foreignKeyName: "participacao_concurso_id_fkey";
+            columns: ["concurso_id"];
+            isOneToOne: false;
+            referencedRelation: "concursos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      preferencias: {
+        Row: {
+          user_id: string;
+          consumo_km_l: number | null;
+          preco_combustivel: number | null;
+          atualizado_em: string;
+        };
+        Insert: { user_id?: string; consumo_km_l?: number | null; preco_combustivel?: number | null };
+        Update: { consumo_km_l?: number | null; preco_combustivel?: number | null };
+        Relationships: [];
+      };
+      sessoes_estudo: {
+        Row: {
+          id: string;
+          user_id: string;
+          concurso_id: string;
+          materia_id: string | null;
+          dia: string;
+          minutos: number;
+          criado_em: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          concurso_id: string;
+          materia_id?: string | null;
+          dia?: string;
+          minutos: number;
+        };
+        Update: { materia_id?: string | null; dia?: string; minutos?: number };
+        Relationships: [
+          {
+            foreignKeyName: "sessoes_estudo_concurso_id_fkey";
+            columns: ["concurso_id"];
+            isOneToOne: false;
+            referencedRelation: "concursos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "sessoes_estudo_materia_id_fkey";
+            columns: ["materia_id"];
+            isOneToOne: false;
+            referencedRelation: "materias";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      caderno_erros: {
+        Row: {
+          id: string;
+          user_id: string;
+          concurso_id: string;
+          prova_id: string | null;
+          materia_id: string | null;
+          questao: number | null;
+          descricao: string;
+          revisado: boolean;
+          criado_em: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          concurso_id: string;
+          prova_id?: string | null;
+          materia_id?: string | null;
+          questao?: number | null;
+          descricao: string;
+          revisado?: boolean;
+        };
+        Update: {
+          prova_id?: string | null;
+          materia_id?: string | null;
+          questao?: number | null;
+          descricao?: string;
+          revisado?: boolean;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "caderno_erros_concurso_id_fkey";
+            columns: ["concurso_id"];
+            isOneToOne: false;
+            referencedRelation: "concursos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "caderno_erros_prova_id_fkey";
+            columns: ["prova_id"];
+            isOneToOne: false;
+            referencedRelation: "provas_anteriores";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "caderno_erros_materia_id_fkey";
+            columns: ["materia_id"];
+            isOneToOne: false;
+            referencedRelation: "materias";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       v_progresso_materia: {
@@ -342,3 +491,7 @@ export type ConcursoCompleto = Concurso & {
 
 export type ProvaAnterior = Tabela<"provas_anteriores">;
 export type ProvaResolvida = Tabela<"prova_resolvida">;
+export type Participacao = Tabela<"participacao">;
+export type Preferencias = Tabela<"preferencias">;
+export type SessaoEstudo = Tabela<"sessoes_estudo">;
+export type ErroCaderno = Tabela<"caderno_erros">;

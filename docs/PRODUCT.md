@@ -74,3 +74,27 @@ No detalhe do concurso, seção "Provas anteriores":
 - **Buscar** (sem API — não existe API pública gratuita de provas): links montados com o cargo (principal por padrão; seletor se houver vários) e a banca — PCI Concursos `/provas/<cargo>` e `/provas/<banca>`, Google restrito ao PCI com cargo + banca, e Google por PDF de prova/gabarito. Cargo é limpo de carga horária e parênteses ("Médico Veterinário - 40h" → "Médico Veterinário").
 - **Guardar**: provas achadas viram registros do concurso (cargo, ano, órgão, banca, link da prova, link do gabarito, observações). Compartilhadas entre os dois usuários.
 - **Resolvi**: marcação individual por usuário, com acertos/questões opcionais (mostra `38/50 · 76%`).
+
+## Minha participação (individual)
+
+No detalhe do concurso, só o usuário logado vê os próprios dados:
+
+- **Inscrição**: inscrito, boleto pago, cartão de confirmação, local de prova (texto). Na tabela, o prazo mostra "✓ inscrito" ou, com prazo ≤ 7 dias sem inscrição, "não inscrito" no acento; o contador do topo conta só os prazos da semana **sem inscrição**.
+- **Custo para prestar**: por cidade base — combustível ida e volta (consumo km/l e R$/litro em Ajustes › Viagem, individuais) + taxa do cargo principal + hospedagem (informada no concurso) = total.
+- **Resultado** (só concursos realizados): nota, classificação, aprovado / não aprovado / aguardando.
+
+## Realizados
+
+Concursos com status "Prova realizada" ou "Resultado" saem da tabela principal e ficam na aba **Realizados** (`/?aba=realizados`), onde a coluna de prazo é trocada por Resultado. Mudar o status de volta devolve o concurso à tabela principal.
+
+## Estudo na tabela
+
+Coluna **Estudo** (e linha na ficha mobile) com a barra de progresso do usuário no concurso; ordenável.
+
+## Estudo (geral e por concurso)
+
+- **Cronômetro** na página de estudo do concurso: escolher matéria (ou "Geral"), iniciar/pausar/continuar, "Encerrar e salvar" grava os minutos. Sobrevive a recarregar a página (fica no navegador). Registro manual: minutos + dia + matéria.
+- **Revisão espaçada**: ao marcar um tópico, ele volta para revisão em 1 dia, depois 7, depois 30, e sai do ciclo. No checklist aparece o carimbo "revisar n/3"; em `/estudo`, a lista "Revisões de hoje" (inclui atrasadas). Desmarcar o tópico zera o ciclo.
+- **Caderno de erros**: em cada prova guardada, "caderno de erros (n)" — número da questão, matéria, o que errou. Em `/estudo`, todos os erros agrupados por matéria, com "revisado" (risca) e opção de ver os revisados.
+- **Horas estudadas** em `/estudo`: barras dos últimos 7 dias para cada um dos dois usuários (mesma escala), totais de 7 e 28 dias.
+- **Desempenho por matéria** em `/estudo`: % de tópicos, horas, erros abertos; destaque "atenção" com 3+ erros não revisados ou menos de 25% estudado.

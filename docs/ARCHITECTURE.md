@@ -37,6 +37,7 @@ myconcursos/
 │  │     │     ├─ page.tsx       # detalhe (cargos, distâncias)
 │  │     │     ├─ editar/page.tsx
 │  │     │     └─ estudo/page.tsx# checklist do concurso
+│  │     ├─ estudo/page.tsx       # visão geral: revisões, horas, desempenho, caderno de erros
 │  │     ├─ materias-em-comum/page.tsx
 │  │     └─ ajustes/page.tsx     # cidades base
 │  ├─ actions/                   # Server Actions ("use server"), uma por domínio
@@ -49,7 +50,8 @@ myconcursos/
 │  │  ├─ concursos/              # TabelaConcursos (tabela + cards mobile), FormConcurso, BotaoExcluir
 │  │  ├─ importacao/             # ImportarEdital (5 passos: PDF, conferir, prompt, resposta, salvar)
 │  │  ├─ estudo/                 # ChecklistEstudo (matérias, tópicos, marcação otimista)
-│  │  └─ provas/                 # ProvasAnteriores (links de busca + provas guardadas)
+│  │  ├─ provas/                 # ProvasAnteriores (links de busca + provas guardadas)
+│  │  └─ participacao/           # MinhaParticipacao (inscrição, custo, resultado)
 │  ├─ lib/
 │  │  ├─ env.ts                  # URL + chave pública (PUBLISHABLE ?? ANON)
 │  │  ├─ status.ts               # enum de status, rótulos, UFs
@@ -90,7 +92,17 @@ myconcursos/
 
 **Estudo.** A página carrega `materias → topicos → topico_progresso` num select aninhado; o RLS devolve só o progresso do usuário logado (embutido não sofre o limite de 1000 linhas do PostgREST). Marcar = upsert/delete em `topico_progresso` via `marcarTopicos` (lote, até 500 ids), com `useOptimistic` no cliente. Criar matéria/tópicos reaproveita `adicionarMaterias` (mescla por nome normalizado, sem duplicar tópico).
 
+**Participação (individual).** `actions/participacao.ts` faz upsert **parcial** em `participacao` (só os campos enviados; Zod `.partial().strict()` em `lib/schemas/participacao.ts`). No detalhe, `MinhaParticipacao` salva checkboxes no clique e campos de texto/número ao sair do campo; em erro volta ao último valor salvo. A tabela principal embute `participacao(...)` no select de concursos e lê `v_progresso_concurso` (coluna Estudo).
+
+**Realizados.** `/?aba=realizados` (Server Component lê `searchParams`). `STATUS_REALIZADOS` (`lib/status.ts`) = prova realizada/resultado. Nessa aba a coluna Prazo vira Resultado e o filtro de status mostra só esses dois.
+
+**Custo da viagem.** `lib/custo.ts`: combustível = 2 × km ÷ km/l × R$/l (preferências do usuário) + taxa do cargo principal + hospedagem. Calculado na renderização a partir do cache de distâncias — sem chamada externa.
+
 **Provas anteriores.** `lib/provas/busca.ts` monta os links de busca (PCI/Google) no cliente — nenhuma requisição externa pelo app. Provas guardadas: `actions/provas.ts` (Zod em `lib/schemas/prova.ts`); o detalhe lê `provas_anteriores` com `prova_resolvida` embutida (RLS devolve só a do usuário).
+
+**Estudo geral (`/estudo`).** Server Component agrega no servidor: revisões vencidas (`topico_progresso.proxima_revisao <= hoje`), horas dos membros nos últimos 28 dias (barras de 7 dias, mesma escala para os dois), desempenho por `nome_normalizado` (progresso + minutos + erros abertos) e o caderno de erros. `revisarTopico` avança `revisoes` e agenda a próxima (`lib/revisao.ts`).
+
+**Cronômetro.** `RegistroTempo` guarda o cronômetro no `localStorage` (lido com `useSyncExternalStore`) — é só conveniência local; nada vai ao banco até "Encerrar e salvar" (`registrarSessao`).
 
 **Matérias em comum.** Lista de `v_materias_em_comum` + progresso somado no servidor (`materias.nome_normalizado` × `v_progresso_materia`). Matérias de um só concurso ficam num bloco recolhido.
 

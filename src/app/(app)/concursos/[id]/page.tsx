@@ -3,17 +3,29 @@ import { Link } from "@/components/ui/link";
 import { notFound } from "next/navigation";
 import { BotaoExcluir } from "@/components/concursos/botao-excluir";
 import { BotaoRecalcular } from "@/components/concursos/botao-recalcular";
+import { MinhaParticipacao } from "@/components/participacao/minha-participacao";
 import { ProvasAnteriores } from "@/components/provas/provas-anteriores";
 import { Carimbo } from "@/components/ui/carimbo";
 import { Progresso } from "@/components/ui/progresso";
 import { DataProva, PrazoInscricao } from "@/components/ui/datas";
-import { duracao, hojeISO, km, moeda, vagasTexto } from "@/lib/format";
+import { custoCombustivel } from "@/lib/custo";
+import { cargoPrincipal, duracao, hojeISO, km, moeda, vagasTexto } from "@/lib/format";
+import { realizado } from "@/lib/status";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function ConcursoPage({ params }: PageProps<"/concursos/[id]">) {
   const { id } = await params;
   const supabase = await createClient();
-  const [{ data: concurso }, { data: cidades }, { data: progresso }, { data: provas }] = await Promise.all([
+  const [
+    { data: concurso },
+    { data: cidades },
+    { data: progresso },
+    { data: provas },
+    { data: participacao },
+    { data: preferencias },
+    { data: materias },
+    { data: erros },
+  ] = await Promise.all([
     supabase
       .from("concursos")
       .select("*, cargos(*), concurso_distancias(*)")
@@ -28,6 +40,12 @@ export default async function ConcursoPage({ params }: PageProps<"/concursos/[id
       .eq("concurso_id", id)
       .order("ano", { ascending: false, nullsFirst: false })
       .order("criado_em"),
+    // Individuais (RLS): só a linha do usuário logado.
+    supabase.from("participacao").select("*").eq("concurso_id", id).maybeSingle(),
+    supabase.from("preferencias").select("*").maybeSingle(),
+    supabase.from("materias").select("id, nome").eq("concurso_id", id).order("ordem"),
+    // caderno_erros é individual (RLS).
+    supabase.from("caderno_erros").select("*").eq("concurso_id", id).order("criado_em"),
   ]);
 
   if (!concurso) notFound();
@@ -37,6 +55,14 @@ export default async function ConcursoPage({ params }: PageProps<"/concursos/[id
     (a, b) => Number(b.principal) - Number(a.principal) || a.ordem - b.ordem,
   );
   const nome = `${concurso.municipio} – ${concurso.uf}`;
+  const origens = (cidades ?? []).map((cb) => {
+    const d = concurso.concurso_distancias.find((x) => x.cidade_base_id === cb.id);
+    return {
+      rotulo: cb.rotulo,
+      km: d?.distancia_km ?? null,
+      combustivel: custoCombustivel(d?.distancia_km, preferencias?.consumo_km_l, preferencias?.preco_combustivel),
+    };
+  });
 
   return (
     <div className="max-w-5xl">
@@ -84,7 +110,7 @@ export default async function ConcursoPage({ params }: PageProps<"/concursos/[id
         <div>
           <dt className="rotulo">Prazo para inscrição</dt>
           <dd className="mt-0.5">
-            <PrazoInscricao iso={concurso.inscricao_fim} hoje={hoje} />
+            <PrazoInscricao iso={concurso.inscricao_fim} hoje={hoje} inscrito={participacao?.inscrito ?? false} />
           </dd>
         </div>
         <div>
@@ -150,6 +176,18 @@ export default async function ConcursoPage({ params }: PageProps<"/concursos/[id
       </dl>
 
       <section className="border-b border-pauta py-5">
+        <h2 className="mb-1 font-serif text-xl">Minha participação</h2>
+        <MinhaParticipacao
+          concursoId={id}
+          participacao={participacao}
+          realizado={realizado(concurso.status)}
+          taxa={cargoPrincipal(concurso.cargos)?.taxa_inscricao ?? null}
+          origens={origens}
+          temPreferencias={!!(preferencias?.consumo_km_l && preferencias.preco_combustivel)}
+        />
+      </section>
+
+      <section className="border-b border-pauta py-5">
         <div className="mb-2 flex items-baseline gap-4">
           <h2 className="font-serif text-xl">Estudo</h2>
           <Link href={`/concursos/${id}/estudo`} className="botao-texto text-sm">
@@ -169,6 +207,8 @@ export default async function ConcursoPage({ params }: PageProps<"/concursos/[id
           concursoId={id}
           cargos={[...new Set(cargos.map((c) => c.nome))]}
           banca={concurso.banca}
+          materias={materias ?? []}
+          erros={erros ?? []}
           provas={(provas ?? []).map(({ prova_resolvida, ...p }) => ({
             ...p,
             resolvida: prova_resolvida[0] ?? null,
