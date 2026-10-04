@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(npm run dev*)",
+      "Bash(npm start*)",
+      "Bash(npm run start*)",
+      "Bash(npx next dev*)",
+      "Bash(npx next start*)",
+      "Bash(next dev*)",
+      "Bash(next start*)",
+      "PowerShell(npm run dev*)",
+      "PowerShell(npm start*)",
+      "PowerShell(npm run start*)",
+      "PowerShell(npx next dev*)",
+      "PowerShell(npx next start*)"
+    ]
+  }
+}
