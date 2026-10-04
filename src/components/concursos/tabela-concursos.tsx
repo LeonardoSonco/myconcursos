@@ -6,7 +6,6 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Fragment, useState } from "react";
 import { Carimbo } from "@/components/ui/carimbo";
 import { DataProva, PrazoInscricao } from "@/components/ui/datas";
-import { Progresso } from "@/components/ui/progresso";
 import {
   cargoPrincipal,
   contagemPrazo,
@@ -269,7 +268,8 @@ export function TabelaConcursos({ concursos, cidades, hoje, realizados }: Props)
       {/* Desktop: planilha */}
       {linhas.length > 0 && (
         <div className="hidden overflow-x-auto md:block">
-          <table className="w-full border-collapse text-sm">
+          {/* Planilha compacta: 12px no corpo e 10px no texto secundário (inclusive dentro de DataProva/PrazoInscricao). */}
+          <table className="w-full border-collapse text-xs [&_.text-xs]:text-[10px]">
             <thead>
               <tr>
                 <Th sort={sort} col="lugar" className="border-r">
@@ -310,7 +310,7 @@ export function TabelaConcursos({ concursos, cidades, hoje, realizados }: Props)
                       <td className="border-r border-pauta px-2 py-1.5 align-top">
                         <Link
                           href={`/concursos/${c.id}`}
-                          className="block group-hover:underline after:absolute after:inset-0"
+                          className="block text-sm group-hover:underline after:absolute after:inset-0"
                         >
                           <span className="font-medium">{c.municipio}</span>
                           <span className="text-tinta-2"> – {c.uf}</span>
@@ -320,7 +320,7 @@ export function TabelaConcursos({ concursos, cidades, hoje, realizados }: Props)
                       <td className="px-2 py-1.5 align-top">
                         {principal ? (
                           <>
-                            {principal.nome}: <span className="num">{vagasTexto(principal)}</span>
+                            <NomeCargo nome={principal.nome} />: <span className="num text-sm">{vagasTexto(principal)}</span>
                           </>
                         ) : (
                           <span className="text-tinta-2">—</span>
@@ -338,7 +338,7 @@ export function TabelaConcursos({ concursos, cidades, hoje, realizados }: Props)
                           </button>
                         )}
                       </td>
-                      <td className="num px-2 py-1.5 text-right align-top whitespace-nowrap">
+                      <td className="num px-2 py-1.5 text-right align-top text-sm whitespace-nowrap">
                         {horasSalario(principal)}
                       </td>
                       {cidades.map((cb) => (
@@ -374,9 +374,9 @@ export function TabelaConcursos({ concursos, cidades, hoje, realizados }: Props)
                       <td className="px-2 py-1.5 align-top whitespace-nowrap">
                         <DataProva iso={c.prova_data} hoje={hoje} />
                       </td>
-                      <td className="w-36 px-2 py-1.5 align-top">
+                      <td className="num px-2 py-1.5 align-top">
                         {c.estudo?.total ? (
-                          <Progresso feitos={c.estudo.feitos} total={c.estudo.total} className="pt-1.5" />
+                          `${Math.round((c.estudo.feitos / c.estudo.total) * 100)}%`
                         ) : (
                           <span className="text-tinta-2">—</span>
                         )}
@@ -387,9 +387,9 @@ export function TabelaConcursos({ concursos, cidades, hoje, realizados }: Props)
                         <tr key={cg.id} className="surgir border-b border-dashed border-pauta text-tinta-2">
                           <td className="border-r border-pauta" />
                           <td className="py-1 pr-2 pl-5">
-                            {cg.nome}: <span className="num">{vagasTexto(cg)}</span>
+                            <NomeCargo nome={cg.nome} />: <span className="num text-sm">{vagasTexto(cg)}</span>
                           </td>
-                          <td className="num px-2 py-1 text-right whitespace-nowrap">
+                          <td className="num px-2 py-1 text-right text-sm whitespace-nowrap">
                             {horasSalario(cg)}
                           </td>
                           <td colSpan={cidades.length + 6} />
@@ -461,8 +461,8 @@ export function TabelaConcursos({ concursos, cidades, hoje, realizados }: Props)
                   {c.estudo?.total ? (
                     <div className="col-span-2">
                       <dt className="rotulo">Estudo</dt>
-                      <dd>
-                        <Progresso feitos={c.estudo.feitos} total={c.estudo.total} />
+                      <dd className="num">
+                        {Math.round((c.estudo.feitos / c.estudo.total) * 100)}%
                       </dd>
                     </div>
                   ) : null}
@@ -510,6 +510,16 @@ export function TabelaConcursos({ concursos, cidades, hoje, realizados }: Props)
       )}
     </div>
   );
+}
+
+/** Cargo abreviado na planilha: 3 primeiras letras de cada palavra ("Médico Veterinário" → "Méd Vet"). */
+function NomeCargo({ nome }: { nome: string }) {
+  const curto = nome
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((p) => p.slice(0, 3))
+    .join(" ");
+  return <span className="text-sm">{curto}</span>;
 }
 
 function Resultado({ minha }: { minha: ConcursoLinha["minha"] }) {

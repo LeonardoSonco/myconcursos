@@ -65,7 +65,7 @@ export default async function ConcursoPage({ params }: PageProps<"/concursos/[id
   });
 
   return (
-    <div className="max-w-5xl">
+    <div className="max-w-6xl">
       <Link href="/" className="botao-texto text-sm">
         ← Concursos
       </Link>
@@ -176,47 +176,6 @@ export default async function ConcursoPage({ params }: PageProps<"/concursos/[id
       </dl>
 
       <section className="border-b border-pauta py-5">
-        <h2 className="mb-1 font-serif text-xl">Minha participação</h2>
-        <MinhaParticipacao
-          concursoId={id}
-          participacao={participacao}
-          realizado={realizado(concurso.status)}
-          taxa={cargoPrincipal(concurso.cargos)?.taxa_inscricao ?? null}
-          origens={origens}
-          temPreferencias={!!(preferencias?.consumo_km_l && preferencias.preco_combustivel)}
-        />
-      </section>
-
-      <section className="border-b border-pauta py-5">
-        <div className="mb-2 flex items-baseline gap-4">
-          <h2 className="font-serif text-xl">Estudo</h2>
-          <Link href={`/concursos/${id}/estudo`} className="botao-texto text-sm">
-            abrir checklist
-          </Link>
-        </div>
-        {progresso && progresso.total_topicos > 0 ? (
-          <Progresso feitos={progresso.estudados} total={progresso.total_topicos} grande className="max-w-md" />
-        ) : (
-          <p className="text-sm text-tinta-2">Sem conteúdo programático ainda.</p>
-        )}
-      </section>
-
-      <section className="border-b border-pauta py-5">
-        <h2 className="mb-3 font-serif text-xl">Provas anteriores</h2>
-        <ProvasAnteriores
-          concursoId={id}
-          cargos={[...new Set(cargos.map((c) => c.nome))]}
-          banca={concurso.banca}
-          materias={materias ?? []}
-          erros={erros ?? []}
-          provas={(provas ?? []).map(({ prova_resolvida, ...p }) => ({
-            ...p,
-            resolvida: prova_resolvida[0] ?? null,
-          }))}
-        />
-      </section>
-
-      <section className="py-5">
         <h2 className="mb-3 font-serif text-xl">Cargos</h2>
         {cargos.length === 0 ? (
           <p className="text-sm text-tinta-2">Nenhum cargo cadastrado.</p>
@@ -230,7 +189,7 @@ export default async function ConcursoPage({ params }: PageProps<"/concursos/[id
                   <th className="rotulo px-2 py-2 text-right font-normal">Horas</th>
                   <th className="rotulo px-2 py-2 text-right font-normal">Salário</th>
                   <th className="rotulo px-2 py-2 text-right font-normal">Taxa</th>
-                  <th className="rotulo px-2 py-2 font-normal">Requisitos</th>
+                  <th className="rotulo w-[36%] px-2 py-2 font-normal">Requisitos</th>
                 </tr>
               </thead>
               <tbody>
@@ -257,6 +216,47 @@ export default async function ConcursoPage({ params }: PageProps<"/concursos/[id
             </table>
           </div>
         )}
+      </section>
+
+      <section className="border-b border-pauta py-5">
+        <h2 className="mb-1 font-serif text-xl">Minha participação</h2>
+        <MinhaParticipacao
+          concursoId={id}
+          participacao={participacao}
+          realizado={realizado(concurso.status)}
+          taxa={cargoPrincipal(concurso.cargos)?.taxa_inscricao ?? null}
+          origens={origens}
+          temPreferencias={!!(preferencias?.consumo_km_l && preferencias.preco_combustivel)}
+        />
+      </section>
+
+      <section className="border-b border-pauta py-5">
+        <div className="mb-2 flex items-baseline gap-4">
+          <h2 className="font-serif text-xl">Estudo</h2>
+          <Link href={`/concursos/${id}/estudo`} className="botao-texto text-sm">
+            abrir checklist
+          </Link>
+        </div>
+        {progresso && progresso.total_topicos > 0 ? (
+          <Progresso feitos={progresso.estudados} total={progresso.total_topicos} grande className="max-w-md" />
+        ) : (
+          <p className="text-sm text-tinta-2">Sem conteúdo programático ainda.</p>
+        )}
+      </section>
+
+      <section className="py-5">
+        <h2 className="mb-3 font-serif text-xl">Provas anteriores</h2>
+        <ProvasAnteriores
+          concursoId={id}
+          cargos={[...new Set(cargos.map((c) => c.nome))]}
+          banca={concurso.banca}
+          materias={materias ?? []}
+          erros={erros ?? []}
+          provas={(provas ?? []).map(({ prova_resolvida, ...p }) => ({
+            ...p,
+            resolvida: prova_resolvida[0] ?? null,
+          }))}
+        />
       </section>
 
       {concurso.observacoes && (

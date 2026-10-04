@@ -52,7 +52,7 @@ export default async function MateriasEmComumPage() {
   const unicas = linhas.filter((l) => l.qtd === 1);
 
   return (
-    <div className="max-w-5xl">
+    <div className="max-w-6xl">
       <h1 className="font-serif text-3xl tracking-tight">Matérias em comum</h1>
       <p className="mt-1 mb-6 max-w-2xl text-sm text-tinta-2">
         Matérias que se repetem entre os concursos cadastrados — estudar uma delas adianta vários

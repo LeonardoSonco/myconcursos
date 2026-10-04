@@ -119,7 +119,7 @@ export default async function EstudoGeralPage() {
     .sort((a, b) => Number(atencao(b)) - Number(atencao(a)) || b.errosAbertos - a.errosAbertos || pct(a) - pct(b));
 
   return (
-    <div className="max-w-5xl">
+    <div className="max-w-6xl">
       <h1 className="font-serif text-3xl tracking-tight">Estudo</h1>
       <p className="mt-1 mb-8 text-sm text-tinta-2">
         Visão geral de todos os concursos. O cronômetro fica na página de estudo de cada concurso.
