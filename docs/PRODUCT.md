@@ -66,3 +66,11 @@ Colunas, nesta ordem:
 - Marcar tópico como estudado (individual).
 - Barra de progresso por matéria e por concurso.
 - Tela **Matérias em comum**: matérias que aparecem em mais concursos (agrupadas por nome normalizado), para priorizar.
+
+## Provas anteriores
+
+No detalhe do concurso, seção "Provas anteriores":
+
+- **Buscar** (sem API — não existe API pública gratuita de provas): links montados com o cargo (principal por padrão; seletor se houver vários) e a banca — PCI Concursos `/provas/<cargo>` e `/provas/<banca>`, Google restrito ao PCI com cargo + banca, e Google por PDF de prova/gabarito. Cargo é limpo de carga horária e parênteses ("Médico Veterinário - 40h" → "Médico Veterinário").
+- **Guardar**: provas achadas viram registros do concurso (cargo, ano, órgão, banca, link da prova, link do gabarito, observações). Compartilhadas entre os dois usuários.
+- **Resolvi**: marcação individual por usuário, com acertos/questões opcionais (mostra `38/50 · 76%`).

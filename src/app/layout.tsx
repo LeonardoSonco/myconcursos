@@ -38,7 +38,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: temaScript }} />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      {/* Extensões (ex.: ColorZilla) injetam atributos no <body> antes da hidratação. */}
+      <body suppressHydrationWarning className="min-h-full flex flex-col">
+        {children}
+      </body>
     </html>
   );
 }

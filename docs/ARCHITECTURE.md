@@ -48,7 +48,8 @@ myconcursos/
 │  │  ├─ ui/                     # Carimbo, PrazoInscricao/DataProva, TemaToggle, Secao/Campo, Progresso
 │  │  ├─ concursos/              # TabelaConcursos (tabela + cards mobile), FormConcurso, BotaoExcluir
 │  │  ├─ importacao/             # ImportarEdital (5 passos: PDF, conferir, prompt, resposta, salvar)
-│  │  └─ estudo/                 # ChecklistEstudo (matérias, tópicos, marcação otimista)
+│  │  ├─ estudo/                 # ChecklistEstudo (matérias, tópicos, marcação otimista)
+│  │  └─ provas/                 # ProvasAnteriores (links de busca + provas guardadas)
 │  ├─ lib/
 │  │  ├─ env.ts                  # URL + chave pública (PUBLISHABLE ?? ANON)
 │  │  ├─ status.ts               # enum de status, rótulos, UFs
@@ -88,6 +89,8 @@ myconcursos/
 - `normalizaNome` (TS, `lib/format.ts`) espelha `public.normaliza_nome` (SQL).
 
 **Estudo.** A página carrega `materias → topicos → topico_progresso` num select aninhado; o RLS devolve só o progresso do usuário logado (embutido não sofre o limite de 1000 linhas do PostgREST). Marcar = upsert/delete em `topico_progresso` via `marcarTopicos` (lote, até 500 ids), com `useOptimistic` no cliente. Criar matéria/tópicos reaproveita `adicionarMaterias` (mescla por nome normalizado, sem duplicar tópico).
+
+**Provas anteriores.** `lib/provas/busca.ts` monta os links de busca (PCI/Google) no cliente — nenhuma requisição externa pelo app. Provas guardadas: `actions/provas.ts` (Zod em `lib/schemas/prova.ts`); o detalhe lê `provas_anteriores` com `prova_resolvida` embutida (RLS devolve só a do usuário).
 
 **Matérias em comum.** Lista de `v_materias_em_comum` + progresso somado no servidor (`materias.nome_normalizado` × `v_progresso_materia`). Matérias de um só concurso ficam num bloco recolhido.
 

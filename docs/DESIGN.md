@@ -45,10 +45,10 @@ Escala compacta: corpo 14px na tabela, 15px em formulários; títulos 28/22/18px
 
 ## Componentes-chave
 
-- **Tabela**: linhas de 1px `--pauta`, sem bordas verticais exceto após "Lugar"; cabeçalho `--papel-2` em caixa alta pequena (11px, `--tinta-2`), fixo no scroll; hover da linha só muda o fundo para `--papel-2`. Altura de linha ~36px.
+- **Tabela**: linhas de 1px `--pauta`, sem bordas verticais exceto após "Lugar"; cabeçalho `--papel-2` em caixa alta pequena (11px, `--tinta-2`), fixo no scroll; hover da linha só muda o fundo para `--papel-2`. Altura de linha ~36px. A linha inteira abre o concurso (Ctrl/clique do meio = nova aba); links e botões dentro dela mantêm o próprio comportamento.
 - **Prazo**: data em mono + linha abaixo com contagem ("faltam 5 dias"). ≤ 7 dias: texto `--acento` e sublinhado ondulado discreto; encerrado: `--tinta-2` riscado.
 - **Vagas**: `Cargo: 1 + CR`; `+2 cargos` como botão-texto que expande sub-linhas indentadas.
-- **Card mobile** (< 768px): ficha com borda `--pauta`, sem sombra; título serifado, carimbo no canto, números em grade 2 colunas.
+- **Card mobile** (< 768px): ficha com borda `--pauta`, sem sombra; título serifado, carimbo no canto, números em grade 2 colunas; botão "Ver detalhes" na largura toda ao pé da ficha.
 - **Botões**: retangulares, borda 1px `--tinta`, fundo transparente; primário preenchido `--tinta` com texto `--papel`. Sem gradiente.
 - **Inputs**: fundo `--papel-2`, borda inferior 1px (estilo linha de formulário), foco com borda `--tinta` 2px.
 - **Barra de progresso**: trilho fino (4px) `--pauta`, preenchimento `--tinta`; porcentagem em mono ao lado.
@@ -57,3 +57,12 @@ Escala compacta: corpo 14px na tabela, 15px em formulários; títulos 28/22/18px
 ## Movimento
 
 Transições de 120–180ms em cor/opacidade/altura (expandir cargos). Marcar tópico: risco suave no texto. Nada de bounce, parallax ou skeleton chamativo. Respeitar `prefers-reduced-motion`.
+
+Implementação (classes em `globals.css`):
+
+- **Navegação**: usar `Link` de `@/components/ui/link` (não `next/link` direto) — mostra uma barra de 2px `--tinta` fixa no topo enquanto a rota não troca (`useLinkStatus`).
+- **Carregamento de rota**: `(app)/loading.tsx` = folha pautada em branco, que só aparece após ~200ms (`.carregando-atraso`). `(app)/template.tsx` aplica `.entrar` (fade + 3px, 180ms) a cada página.
+- **Botões que esperam o servidor**: `<Girando ativo={pending} />` + `aria-busy` + texto no gerúndio ("Salvando…"). `.botao` afunda 1px no `:active`.
+- **Blocos que aparecem** (mensagens, formulários abertos, sub-linhas): `.surgir` (só opacidade) ou `.entrar`.
+- **Tópico estudado**: `.risco[data-feito]` desenha o risco da esquerda para a direita.
+- **Barra de progresso**: enche a partir de zero ao montar (`.preenchimento`).

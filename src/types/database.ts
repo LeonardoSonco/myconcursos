@@ -1,4 +1,4 @@
-// Escrito à mão espelhando supabase/migrations/0001_init.sql.
+// Escrito à mão espelhando supabase/migrations/ (0001_init.sql, 0002_provas_anteriores.sql).
 // Pode ser substituído por: npx supabase gen types typescript --project-id <id> > src/types/database.ts
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
@@ -230,6 +230,67 @@ export type Database = {
           },
         ];
       };
+      provas_anteriores: {
+        Row: {
+          id: string;
+          concurso_id: string;
+          cargo: string;
+          orgao: string | null;
+          banca: string | null;
+          ano: number | null;
+          prova_url: string;
+          gabarito_url: string | null;
+          observacoes: string | null;
+          criado_em: string;
+        };
+        Insert: {
+          id?: string;
+          concurso_id: string;
+          cargo: string;
+          orgao?: string | null;
+          banca?: string | null;
+          ano?: number | null;
+          prova_url: string;
+          gabarito_url?: string | null;
+          observacoes?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["provas_anteriores"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "provas_anteriores_concurso_id_fkey";
+            columns: ["concurso_id"];
+            isOneToOne: false;
+            referencedRelation: "concursos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      prova_resolvida: {
+        Row: {
+          user_id: string;
+          prova_id: string;
+          acertos: number | null;
+          questoes: number | null;
+          resolvida_em: string;
+        };
+        Insert: {
+          user_id?: string;
+          prova_id: string;
+          acertos?: number | null;
+          questoes?: number | null;
+          resolvida_em?: string;
+        };
+        Update: { acertos?: number | null; questoes?: number | null; resolvida_em?: string };
+        Relationships: [
+          {
+            foreignKeyName: "prova_resolvida_prova_id_fkey";
+            columns: ["prova_id"];
+            isOneToOne: false;
+            referencedRelation: "provas_anteriores";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       v_progresso_materia: {
@@ -278,3 +339,6 @@ export type ConcursoCompleto = Concurso & {
   cargos: Cargo[];
   concurso_distancias: Distancia[];
 };
+
+export type ProvaAnterior = Tabela<"provas_anteriores">;
+export type ProvaResolvida = Tabela<"prova_resolvida">;

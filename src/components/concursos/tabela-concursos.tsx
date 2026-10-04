@@ -1,7 +1,7 @@
 "use client";
 
-import { ArrowDown, ArrowUp, ExternalLink } from "lucide-react";
-import Link from "next/link";
+import { ArrowDown, ArrowRight, ArrowUp, ExternalLink } from "lucide-react";
+import { Link } from "@/components/ui/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Fragment, useState } from "react";
 import { Carimbo } from "@/components/ui/carimbo";
@@ -284,9 +284,13 @@ export function TabelaConcursos({ concursos, cidades, hoje }: Props) {
                 const aberto = expandidos.has(c.id);
                 return (
                   <Fragment key={c.id}>
-                    <tr className="group border-b border-pauta transition-colors hover:bg-papel-2">
+                    {/* O link do lugar se estica (::after) sobre a linha inteira; links e botões da linha ficam acima dele (z-[1]). */}
+                    <tr className="group relative border-b border-pauta transition-colors hover:bg-papel-2">
                       <td className="border-r border-pauta px-2 py-1.5 align-top">
-                        <Link href={`/concursos/${c.id}`} className="block hover:underline">
+                        <Link
+                          href={`/concursos/${c.id}`}
+                          className="block group-hover:underline after:absolute after:inset-0"
+                        >
                           <span className="font-medium">{c.municipio}</span>
                           <span className="text-tinta-2"> – {c.uf}</span>
                         </Link>
@@ -305,7 +309,7 @@ export function TabelaConcursos({ concursos, cidades, hoje }: Props) {
                             type="button"
                             onClick={() => alternarExpandido(c.id)}
                             aria-expanded={aberto}
-                            className="botao-texto ml-2 text-xs"
+                            className="botao-texto relative z-[1] ml-2 text-xs"
                           >
                             {aberto
                               ? "ocultar"
@@ -331,7 +335,7 @@ export function TabelaConcursos({ concursos, cidades, hoje }: Props) {
                             href={c.edital_url}
                             target="_blank"
                             rel="noreferrer"
-                            className="botao-texto inline-flex items-center gap-1"
+                            className="botao-texto relative z-[1] inline-flex items-center gap-1"
                           >
                             edital <ExternalLink size={12} strokeWidth={1.5} />
                           </a>
@@ -348,7 +352,7 @@ export function TabelaConcursos({ concursos, cidades, hoje }: Props) {
                     </tr>
                     {aberto &&
                       outros.map((cg) => (
-                        <tr key={cg.id} className="border-b border-dashed border-pauta text-tinta-2">
+                        <tr key={cg.id} className="surgir border-b border-dashed border-pauta text-tinta-2">
                           <td className="border-r border-pauta" />
                           <td className="py-1 pr-2 pl-5">
                             {cg.nome}: <span className="num">{vagasTexto(cg)}</span>
@@ -444,6 +448,12 @@ export function TabelaConcursos({ concursos, cidades, hoje }: Props) {
                     </dd>
                   </div>
                 </dl>
+                <Link
+                  href={`/concursos/${c.id}`}
+                  className="botao mt-3 w-full justify-center py-1.5 text-sm"
+                >
+                  Ver detalhes <ArrowRight size={14} strokeWidth={1.5} />
+                </Link>
               </li>
             );
           })}
@@ -491,7 +501,7 @@ function Th({
     <th
       scope="col"
       aria-sort={ativo ? (sort.dir === "asc" ? "ascending" : "descending") : undefined}
-      className={`sticky top-0 z-10 border-b border-pauta bg-papel-2 px-2 py-2 font-normal whitespace-nowrap ${
+      className={`sticky top-0 z-20 border-b border-pauta bg-papel-2 px-2 py-2 font-normal whitespace-nowrap ${
         alinhar === "right" ? "text-right" : "text-left"
       } ${className}`}
     >

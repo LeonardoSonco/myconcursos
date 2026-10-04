@@ -4,6 +4,7 @@ import { MapPin } from "lucide-react";
 import { useState, useTransition } from "react";
 import { excluirCidadeBase, salvarCidadeBase, type AjusteResultado } from "@/actions/ajustes";
 import { recalcularTodasDistancias } from "@/actions/distancias";
+import { Girando } from "@/components/ui/girando";
 import { UFS } from "@/lib/status";
 import type { CidadeBase } from "@/types/database";
 
@@ -40,7 +41,8 @@ export function CidadesBase({ cidades, pendentes }: Props) {
       </ul>
 
       <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-pauta pt-4 text-sm">
-        <button type="button" className="botao" onClick={recalcularTudo} disabled={pending}>
+        <button type="button" className="botao" onClick={recalcularTudo} disabled={pending} aria-busy={pending}>
+          <Girando ativo={pending} />
           {pending ? "Recalculando…" : "Recalcular todas as distâncias"}
         </button>
         <span className="text-tinta-2">
@@ -54,7 +56,7 @@ export function CidadesBase({ cidades, pendentes }: Props) {
           )}
         </span>
         {resultado && (
-          <p aria-live="polite" className={`w-full ${resultado.ok ? "text-tinta-2" : "text-acento"}`}>
+          <p aria-live="polite" className={`surgir w-full ${resultado.ok ? "text-tinta-2" : "text-acento"}`}>
             {resultado.mensagem}
           </p>
         )}
@@ -142,8 +144,12 @@ function LinhaCidade({
           onChange={(e) => setOrdem(e.target.value)}
         />
         <div className="flex items-center gap-3 text-sm">
-          <button className="botao py-1" disabled={pending || (!alterado && cidade?.lat != null)}>
-            {pending ? "…" : cidade ? "Salvar" : "Adicionar"}
+          <button
+            className="botao py-1"
+            disabled={pending || (!alterado && cidade?.lat != null)}
+            aria-busy={pending}
+          >
+            {pending ? <Girando /> : cidade ? "Salvar" : "Adicionar"}
           </button>
           {cidade && (
             <button type="button" onClick={excluir} disabled={pending} className="botao-texto hover:text-acento">
@@ -172,7 +178,7 @@ function LinhaCidade({
             <span className="text-acento">sem coordenadas — clique em Salvar para geocodificar</span>
           ))}
         {resultado && (
-          <span aria-live="polite" className={resultado.ok ? "" : "text-acento"}>
+          <span aria-live="polite" className={`surgir ${resultado.ok ? "" : "text-acento"}`}>
             {resultado.mensagem}
           </span>
         )}

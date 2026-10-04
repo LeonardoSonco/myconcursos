@@ -1,12 +1,13 @@
 "use client";
 
 import { Plus, X } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/components/ui/link";
 import { useState, useTransition } from "react";
 import { salvarConcurso } from "@/actions/concursos";
 import { numeroParaInput, parseNumeroBR } from "@/lib/format";
 import { concursoSchema, errosPorCampo } from "@/lib/schemas/concurso";
 import { Campo, Secao } from "@/components/ui/campos";
+import { Girando } from "@/components/ui/girando";
 import { STATUS, STATUS_ROTULO, UFS } from "@/lib/status";
 import type { Cargo, Concurso, ConcursoStatus } from "@/types/database";
 
@@ -234,7 +235,7 @@ export function FormConcurso({ concurso }: Props) {
           {cargos.map((c, i) => {
             const e = (campo: string) => err(`cargos.${i}.${campo}`);
             return (
-              <li key={c.id} className="border-b border-pauta py-4">
+              <li key={c.id} className="entrar border-b border-pauta py-4">
                 <div className="flex items-baseline gap-3">
                   <span className="num w-6 shrink-0 text-xs text-tinta-2">{String(i + 1).padStart(2, "0")}</span>
                   <div className="grid flex-1 gap-3 sm:grid-cols-[minmax(12rem,1fr)_5rem_5rem_9rem_7rem]">
@@ -339,14 +340,15 @@ export function FormConcurso({ concurso }: Props) {
       </Secao>
 
       <div className="sticky bottom-0 -mx-4 flex items-center gap-4 border-t border-pauta bg-papel px-4 py-3 md:-mx-6 md:px-6">
-        <button className="botao botao-primario" disabled={pending}>
+        <button className="botao botao-primario" disabled={pending} aria-busy={pending}>
+          <Girando ativo={pending} />
           {pending ? "Salvando…" : concurso ? "Salvar alterações" : "Cadastrar concurso"}
         </button>
         <Link href={concurso ? `/concursos/${concurso.id}` : "/"} className="botao-texto text-sm">
           Cancelar
         </Link>
         <p aria-live="polite" className="text-sm text-acento">
-          {mensagem}
+          {mensagem && <span key={mensagem} className="surgir">{mensagem}</span>}
         </p>
       </div>
     </form>

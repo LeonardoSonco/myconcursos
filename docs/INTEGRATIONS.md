@@ -61,3 +61,12 @@ Regras do parser (`lib/edital/json.ts` + `importacaoJsonSchema`): remover cercas
 **Em várias mensagens** (`gerarPartes`): para o ChatGPT gratuito, que recusa mensagens longas. 1ª mensagem = regras; depois partes de ~10 mil caracteres ("responda apenas OK"); a última pede o JSON. A tela tem um botão "Copiar" por mensagem e avisa para **não anexar o PDF** (o texto já vai no prompt). Link para o Gemini, que aceita textos maiores.
 
 **PDF escaneado:** o prompt pede para anexar o PDF na conversa (ChatGPT e Claude gratuitos aceitam arquivo).
+
+## Provas anteriores (`src/lib/provas/busca.ts`)
+
+Não há API pública gratuita de provas (PCI Concursos, QConcursos, TEC e sites das bancas não oferecem). O app **não** raspa sites: só monta links que o usuário abre em nova aba.
+
+- `https://www.pciconcursos.com.br/provas/<slug-do-cargo>` — slug = `normalizaNome` com hífens (`medico-veterinario`). Pode não existir para cargos com nome incomum.
+- `https://www.pciconcursos.com.br/provas/<slug-da-banca>` — ex.: `/provas/fundatec`.
+- Google `site:pciconcursos.com.br/provas "<cargo>" "<banca>"` — cobre o caso acima de forma robusta.
+- Google `"<cargo>" "<banca>" prova gabarito filetype:pdf` — pega PDFs no site da própria banca.

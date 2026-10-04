@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Link } from "@/components/ui/link";
 import { ImportarEdital } from "@/components/importacao/importar-edital";
 import { createClient } from "@/lib/supabase/server";
 

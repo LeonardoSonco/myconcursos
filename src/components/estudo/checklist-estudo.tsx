@@ -11,6 +11,7 @@ import {
   renomearMateria,
   type EstudoResultado,
 } from "@/actions/estudo";
+import { Girando } from "@/components/ui/girando";
 import { Progresso } from "@/components/ui/progresso";
 
 export type TopicoEstudo = { id: string; titulo: string; estudado: boolean };
@@ -32,7 +33,7 @@ export function ChecklistEstudo({
     m.ids.forEach((id) => (m.estudado ? novo.add(id) : novo.delete(id)));
     return novo;
   });
-  const [, startTransition] = useTransition();
+  const [salvando, startTransition] = useTransition();
   const [erro, setErro] = useState<string | null>(null);
   const [ocultar, setOcultar] = useState(false);
 
@@ -53,7 +54,17 @@ export function ChecklistEstudo({
     <div>
       <div className="mb-6 border-y border-pauta py-4">
         <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-          <span className="rotulo">Progresso no concurso</span>
+          <span className="rotulo inline-flex items-center gap-2">
+            Progresso no concurso
+            <span
+              aria-live="polite"
+              className={`inline-flex items-center gap-1 tracking-normal normal-case transition-opacity duration-150 ${
+                salvando ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              <Girando size={11} /> salvando…
+            </span>
+          </span>
           {total > 0 && (
             <label className="inline-flex items-center gap-2 text-sm text-tinta-2">
               <input
@@ -67,7 +78,7 @@ export function ChecklistEstudo({
           )}
         </div>
         <Progresso feitos={feitos} total={total} grande />
-        {erro && <p className="mt-2 text-sm text-acento">{erro}</p>}
+        {erro && <p className="surgir mt-2 text-sm text-acento">{erro}</p>}
       </div>
 
       {materias.length === 0 ? (
@@ -162,7 +173,8 @@ function MateriaBloco({
             }}
           >
             <input className="campo py-1" value={nome} onChange={(e) => setNome(e.target.value)} autoFocus />
-            <button className="botao py-0.5 text-xs" disabled={pending}>
+            <button className="botao py-0.5 text-xs" disabled={pending} aria-busy={pending}>
+              <Girando ativo={pending} size={11} />
               Salvar
             </button>
             <button type="button" className="botao-texto text-xs" onClick={() => setEditando(false)}>
@@ -174,7 +186,7 @@ function MateriaBloco({
       </div>
 
       {aberta && (
-        <div className="pb-4 pl-6">
+        <div className="entrar pb-4 pl-6">
           <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
             {materia.cargo && <span className="text-tinta-2">cargo: {materia.cargo}</span>}
             {ids.length > 0 && (
@@ -193,6 +205,7 @@ function MateriaBloco({
               type="button"
               className="botao-texto hover:text-acento"
               disabled={pending}
+              aria-busy={pending}
               onClick={() => {
                 if (confirm(`Excluir a matéria "${materia.nome}" e seus ${ids.length} tópicos? Vale para os dois usuários.`)) {
                   executar(() => excluirMateria(concursoId, materia.id));
@@ -216,13 +229,10 @@ function MateriaBloco({
                       checked={feito}
                       onChange={(e) => marcar([t.id], e.target.checked)}
                     />
-                    <label
-                      htmlFor={`t-${t.id}`}
-                      className={`flex-1 cursor-pointer transition-colors duration-150 ${
-                        feito ? "text-tinta-2 line-through decoration-pauta" : ""
-                      }`}
-                    >
-                      {t.titulo}
+                    <label htmlFor={`t-${t.id}`} className="flex-1 cursor-pointer">
+                      <span className="risco" data-feito={feito}>
+                        {t.titulo}
+                      </span>
                     </label>
                     <button
                       type="button"
@@ -248,7 +258,7 @@ function MateriaBloco({
 
           {mostrarNovos ? (
             <form
-              className="mt-3 space-y-2"
+              className="entrar mt-3 space-y-2"
               onSubmit={(e) => {
                 e.preventDefault();
                 executar(() => adicionarTopicos(concursoId, materia.id, novos), () => {
@@ -265,7 +275,8 @@ function MateriaBloco({
                 autoFocus
               />
               <div className="flex items-center gap-3">
-                <button className="botao py-0.5 text-xs" disabled={pending}>
+                <button className="botao py-0.5 text-xs" disabled={pending} aria-busy={pending}>
+                  <Girando ativo={pending} size={11} />
                   {pending ? "Salvando…" : "Adicionar tópicos"}
                 </button>
                 <button type="button" className="botao-texto text-xs" onClick={() => setMostrarNovos(false)}>
@@ -283,7 +294,7 @@ function MateriaBloco({
             </button>
           )}
 
-          {msg && <p className={`mt-2 text-xs ${msg.ok ? "text-tinta-2" : "text-acento"}`}>{msg.mensagem}</p>}
+          {msg && <p className={`surgir mt-2 text-xs ${msg.ok ? "text-tinta-2" : "text-acento"}`}>{msg.mensagem}</p>}
         </div>
       )}
     </li>
@@ -307,7 +318,7 @@ function NovaMateria({ concursoId }: { concursoId: string }) {
 
   return (
     <form
-      className="mt-6 space-y-3 border border-pauta p-4"
+      className="entrar mt-6 space-y-3 border border-pauta p-4"
       onSubmit={(e) => {
         e.preventDefault();
         setMsg(null);
@@ -341,13 +352,14 @@ function NovaMateria({ concursoId }: { concursoId: string }) {
         />
       </label>
       <div className="flex flex-wrap items-center gap-3">
-        <button className="botao botao-primario" disabled={pending}>
+        <button className="botao botao-primario" disabled={pending} aria-busy={pending}>
+          <Girando ativo={pending} />
           {pending ? "Salvando…" : "Criar matéria"}
         </button>
         <button type="button" className="botao-texto text-sm" onClick={() => setAberto(false)}>
           fechar
         </button>
-        {msg && <span className={`text-sm ${msg.ok ? "text-tinta-2" : "text-acento"}`}>{msg.mensagem}</span>}
+        {msg && <span className={`surgir text-sm ${msg.ok ? "text-tinta-2" : "text-acento"}`}>{msg.mensagem}</span>}
       </div>
     </form>
   );

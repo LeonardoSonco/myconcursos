@@ -4,6 +4,7 @@ import { Check, Copy, FileText, TriangleAlert } from "lucide-react";
 import { useState, useTransition } from "react";
 import { salvarImportacao } from "@/actions/importacao";
 import { Campo, Secao } from "@/components/ui/campos";
+import { Girando } from "@/components/ui/girando";
 import { data as fmtData, horasSalario, moeda, numeroParaInput, parseNumeroBR, vagasTexto } from "@/lib/format";
 import { interpretarRespostaIA, type ResultadoJson } from "@/lib/edital/json";
 import { extrairTextoPdf, type TextoPdf } from "@/lib/edital/pdf";
@@ -285,7 +286,11 @@ export function ImportarEdital({ concursos }: { concursos: ConcursoResumo[] }) {
             escolherArquivo(e.dataTransfer.files[0]);
           }}
         >
-          <FileText size={22} strokeWidth={1.25} className="text-tinta-2" />
+          {lendo ? (
+            <Girando size={22} />
+          ) : (
+            <FileText size={22} strokeWidth={1.25} className="text-tinta-2" />
+          )}
           <span className="text-sm">
             {lendo ? "Lendo o PDF…" : pdf ? "Trocar arquivo" : "Escolher PDF ou arrastar aqui"}
           </span>
@@ -298,7 +303,7 @@ export function ImportarEdital({ concursos }: { concursos: ConcursoResumo[] }) {
           />
         </label>
 
-        {erroPdf && <p className="text-sm text-acento">{erroPdf}</p>}
+        {erroPdf && <p className="surgir text-sm text-acento">{erroPdf}</p>}
 
         {pdf && (
           <p className="text-sm text-tinta-2">
@@ -601,7 +606,7 @@ export function ImportarEdital({ concursos }: { concursos: ConcursoResumo[] }) {
             </button>
 
             {resultado && !resultado.ok && (
-              <div className="border-l-2 border-acento pl-3 text-sm text-acento">
+              <div className="surgir border-l-2 border-acento pl-3 text-sm text-acento">
                 <p className="font-medium">A resposta não passou na validação:</p>
                 <ul className="num mt-1 list-disc space-y-0.5 pl-5 text-xs">
                   {resultado.erros.map((e) => (
@@ -683,7 +688,14 @@ export function ImportarEdital({ concursos }: { concursos: ConcursoResumo[] }) {
             </p>
 
             <div className="flex flex-wrap items-center gap-4">
-              <button type="button" className="botao botao-primario" onClick={salvar} disabled={pending}>
+              <button
+                type="button"
+                className="botao botao-primario"
+                onClick={salvar}
+                disabled={pending}
+                aria-busy={pending}
+              >
+                <Girando ativo={pending} />
                 {pending ? "Salvando…" : "Salvar importação"}
               </button>
               <p aria-live="polite" className="text-sm text-acento">

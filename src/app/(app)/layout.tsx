@@ -1,5 +1,6 @@
-import Link from "next/link";
+import { Link } from "@/components/ui/link";
 import { sair } from "@/actions/auth";
+import { BotaoSair } from "@/components/ui/botao-sair";
 import { TemaToggle } from "@/components/ui/tema-toggle";
 import { createClient } from "@/lib/supabase/server";
 
@@ -35,7 +36,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
             {membro && <span className="hidden text-tinta-2 sm:inline">{membro.nome}</span>}
             <TemaToggle />
             <form action={sair}>
-              <button className="botao-texto">Sair</button>
+              <BotaoSair />
             </form>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/components/ui/link";
 import { notFound } from "next/navigation";
 import { FormConcurso } from "@/components/concursos/form-concurso";
 import { createClient } from "@/lib/supabase/server";

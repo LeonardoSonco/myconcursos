@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/components/ui/link";
 import { FormConcurso } from "@/components/concursos/form-concurso";
 
 export default function NovoConcursoPage() {

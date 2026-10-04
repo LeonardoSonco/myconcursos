@@ -1,6 +1,6 @@
 # Banco de dados (Supabase / Postgres)
 
-Esquema completo: [`supabase/migrations/0001_init.sql`](../supabase/migrations/0001_init.sql).
+Esquema completo: [`supabase/migrations/0001_init.sql`](../supabase/migrations/0001_init.sql) + [`0002_provas_anteriores.sql`](../supabase/migrations/0002_provas_anteriores.sql).
 
 ## Diagrama
 
@@ -24,6 +24,8 @@ auth.users ──1:1── membros (allowlist)
 | `materias` | sim | por concurso (e opcionalmente cargo); `nome_normalizado` gerado |
 | `topicos` | sim | por matéria |
 | `topico_progresso` | **individual** | PK (`user_id`, `topico_id`); linha existe = estudado |
+| `provas_anteriores` | sim | por concurso: `cargo`, `orgao`, `banca`, `ano`, `prova_url`, `gabarito_url`, `observacoes` (0002) |
+| `prova_resolvida` | **individual** | PK (`user_id`, `prova_id`); linha existe = resolvida; `acertos`/`questoes` opcionais (0002) |
 
 Enum `concurso_status`: `previsto`, `edital_publicado`, `inscricoes_abertas`, `inscricoes_encerradas`, `prova_realizada`, `resultado`.
 
@@ -43,7 +45,7 @@ Enum `concurso_status`: `previsto`, `edital_publicado`, `inscricoes_abertas`, `i
 
 - Todas as tabelas com RLS ligado; `anon` sem nenhum acesso.
 - Tabelas compartilhadas: policy `membros_tudo` — `for all to authenticated using/with check (is_membro())`.
-- `topico_progresso`: `user_id = auth.uid() and is_membro()`.
+- `topico_progresso` e `prova_resolvida`: `user_id = auth.uid() and is_membro()`.
 - `membros`: só `select`; inserir/remover membros pelo SQL Editor.
 - Policies usam `(select auth.uid())` / `(select is_membro())` para o Postgres avaliar uma vez por query (recomendação do Supabase).
 

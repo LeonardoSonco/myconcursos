@@ -1,8 +1,9 @@
 import { ExternalLink, MapPin } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/components/ui/link";
 import { notFound } from "next/navigation";
 import { BotaoExcluir } from "@/components/concursos/botao-excluir";
 import { BotaoRecalcular } from "@/components/concursos/botao-recalcular";
+import { ProvasAnteriores } from "@/components/provas/provas-anteriores";
 import { Carimbo } from "@/components/ui/carimbo";
 import { Progresso } from "@/components/ui/progresso";
 import { DataProva, PrazoInscricao } from "@/components/ui/datas";
@@ -12,7 +13,7 @@ import { createClient } from "@/lib/supabase/server";
 export default async function ConcursoPage({ params }: PageProps<"/concursos/[id]">) {
   const { id } = await params;
   const supabase = await createClient();
-  const [{ data: concurso }, { data: cidades }, { data: progresso }] = await Promise.all([
+  const [{ data: concurso }, { data: cidades }, { data: progresso }, { data: provas }] = await Promise.all([
     supabase
       .from("concursos")
       .select("*, cargos(*), concurso_distancias(*)")
@@ -20,6 +21,13 @@ export default async function ConcursoPage({ params }: PageProps<"/concursos/[id
       .maybeSingle(),
     supabase.from("cidades_base").select("*").order("ordem"),
     supabase.from("v_progresso_concurso").select("*").eq("concurso_id", id).maybeSingle(),
+    // RLS: prova_resolvida embutida traz só a linha do usuário logado.
+    supabase
+      .from("provas_anteriores")
+      .select("*, prova_resolvida(acertos, questoes)")
+      .eq("concurso_id", id)
+      .order("ano", { ascending: false, nullsFirst: false })
+      .order("criado_em"),
   ]);
 
   if (!concurso) notFound();
@@ -153,6 +161,19 @@ export default async function ConcursoPage({ params }: PageProps<"/concursos/[id
         ) : (
           <p className="text-sm text-tinta-2">Sem conteúdo programático ainda.</p>
         )}
+      </section>
+
+      <section className="border-b border-pauta py-5">
+        <h2 className="mb-3 font-serif text-xl">Provas anteriores</h2>
+        <ProvasAnteriores
+          concursoId={id}
+          cargos={[...new Set(cargos.map((c) => c.nome))]}
+          banca={concurso.banca}
+          provas={(provas ?? []).map(({ prova_resolvida, ...p }) => ({
+            ...p,
+            resolvida: prova_resolvida[0] ?? null,
+          }))}
+        />
       </section>
 
       <section className="py-5">

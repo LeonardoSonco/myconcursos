@@ -22,7 +22,7 @@ export function Progresso({
         aria-label={`${feitos} de ${total} tópicos estudados`}
       >
         <span
-          className="absolute inset-y-0 left-0 bg-tinta transition-[width] duration-200"
+          className="preenchimento absolute inset-y-0 left-0 bg-tinta transition-[width] duration-200"
           style={{ width: `${pct}%` }}
         />
       </span>

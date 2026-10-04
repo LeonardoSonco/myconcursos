@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Link } from "@/components/ui/link";
 import { notFound } from "next/navigation";
 import { ChecklistEstudo, type MateriaEstudo } from "@/components/estudo/checklist-estudo";
 import { createClient } from "@/lib/supabase/server";

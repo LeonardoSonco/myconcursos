@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Link } from "@/components/ui/link";
 import { Progresso } from "@/components/ui/progresso";
 import { createClient } from "@/lib/supabase/server";
 

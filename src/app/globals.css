@@ -188,6 +188,73 @@ body {
   text-underline-offset: 3px;
 }
 
+/* ─── Movimento (DESIGN.md: 120–180ms, sóbrio) ─── */
+
+/* Clique: o botão "afunda" 1px, como tecla de máquina de escrever */
+.botao:not(:disabled):active { transform: translateY(1px); }
+.botao[aria-busy="true"], .botao-texto[aria-busy="true"] { cursor: progress; }
+
+/* Entrada de página e de blocos que aparecem (expandir, mensagens) */
+@keyframes entrar {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes surgir {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.entrar { animation: entrar 180ms ease-out both; }
+.surgir { animation: surgir 160ms ease-out both; }
+
+/* Fallback de carregamento: só aparece se a espera passar de ~200ms */
+.carregando-atraso { animation: surgir 160ms ease-out 200ms both; }
+@keyframes pulsar {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 0.9; }
+}
+.pauta-pulsando { animation: pulsar 1.6s ease-in-out infinite; }
+
+/* Barra fina de navegação no topo (link clicado, rota ainda não trocou) */
+@keyframes avancar {
+  0% { transform: scaleX(0); }
+  40% { transform: scaleX(0.55); }
+  100% { transform: scaleX(0.9); }
+}
+.barra-navegacao {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 50;
+  height: 2px;
+  background: var(--tinta);
+  transform-origin: left;
+  transform: scaleX(0);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms;
+}
+.barra-navegacao[data-ativo="true"] {
+  opacity: 1;
+  animation: avancar 2.5s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+
+/* Barra de progresso: enche ao aparecer */
+@keyframes encher {
+  from { transform: scaleX(0); }
+}
+.preenchimento { transform-origin: left; animation: encher 200ms ease-out; }
+
+/* Marcar tópico: risco suave da esquerda para a direita */
+.risco {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 58%;
+  background-size: 0% 1px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  transition: background-size 180ms ease-out, color 150ms;
+}
+.risco[data-feito="true"] { background-size: 100% 1px; color: var(--tinta-2); }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
 }

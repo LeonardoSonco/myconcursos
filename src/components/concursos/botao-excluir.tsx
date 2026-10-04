@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { excluirConcurso } from "@/actions/concursos";
+import { Girando } from "@/components/ui/girando";
 
 export function BotaoExcluir({ id, nome }: { id: string; nome: string }) {
   const [pending, startTransition] = useTransition();
@@ -18,8 +19,10 @@ export function BotaoExcluir({ id, nome }: { id: string; nome: string }) {
       type="button"
       onClick={excluir}
       disabled={pending}
-      className="botao-texto text-sm hover:text-acento"
+      aria-busy={pending}
+      className="botao-texto inline-flex items-center gap-1 text-sm hover:text-acento"
     >
+      <Girando ativo={pending} size={12} />
       {pending ? "Excluindo…" : "Excluir"}
     </button>
   );

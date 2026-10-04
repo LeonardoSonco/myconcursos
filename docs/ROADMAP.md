@@ -41,6 +41,13 @@ Regra: concluir uma etapa, mostrar ao usuário, esperar aprovação, atualizar e
 - [x] Marcar/desmarcar com `useOptimistic`, "marcar todos" por matéria, "ocultar estudados"; barras por matéria e concurso (também no detalhe)
 - [x] Tela Matérias em comum (`/materias-em-comum`): ordenada por nº de concursos, links para o estudo de cada um, progresso somado
 
+## Extras pedidos após a Etapa 5 — ✅ entregue (aguardando aprovação)
+
+- [x] Feedback de interação: barra de navegação, `loading.tsx`, botões com estado de espera, animações sóbrias (ver DESIGN.md › Movimento)
+- [x] Tabela: linha inteira clicável; botão "Ver detalhes" nas fichas mobile
+- [x] Provas anteriores — links de busca (PCI/Google) por cargo + banca
+- [x] Provas anteriores — guardar provas por concurso + "resolvi" individual com acertos (`0002_provas_anteriores.sql`)
+
 ## Ideias futuras (não pedidas)
 
 - Progresso do estudo como coluna/indicador na tabela principal
@@ -52,3 +59,4 @@ Regra: concluir uma etapa, mostrar ao usuário, esperar aprovação, atualizar e
 | Arquivo | Aplicada? | Descrição |
 |---|---|---|
 | `0001_init.sql` | sim | esquema inicial |
+| `0002_provas_anteriores.sql` | **não — aplicar no SQL Editor** | provas guardadas + resolução individual |

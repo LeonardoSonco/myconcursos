@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/components/ui/link";
 import { Suspense } from "react";
 import { TabelaConcursos } from "@/components/concursos/tabela-concursos";
 import { hojeISO } from "@/lib/format";
