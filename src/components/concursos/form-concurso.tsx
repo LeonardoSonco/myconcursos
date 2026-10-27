@@ -4,8 +4,11 @@ import { Plus, X } from "lucide-react";
 import { Link } from "@/components/ui/link";
 import { useState, useTransition } from "react";
 import { salvarConcurso } from "@/actions/concursos";
-import { numeroParaInput, parseNumeroBR } from "@/lib/format";
+import { PainelIA } from "@/components/concursos/painel-ia";
+import type { CargoImportado, EditalConvertido } from "@/lib/edital/converter";
+import { normalizaNome, numeroParaInput, parseNumeroBR } from "@/lib/format";
 import { concursoSchema, errosPorCampo } from "@/lib/schemas/concurso";
+import type { MateriaImport } from "@/lib/schemas/importacao";
 import { Campo, Secao } from "@/components/ui/campos";
 import { Girando } from "@/components/ui/girando";
 import { STATUS, STATUS_ROTULO, UFS } from "@/lib/status";
@@ -23,7 +26,11 @@ type CargoForm = {
   principal: boolean;
 };
 
-type Props = { concurso?: Concurso & { cargos: Cargo[] } };
+type Props = {
+  concurso?: Concurso & { cargos: Cargo[] };
+  /** Painel "Preencher com IA" começa aberto. */
+  iaAberto?: boolean;
+};
 
 function cargoVazio(principal = false): CargoForm {
   return {
@@ -53,10 +60,24 @@ function cargoParaForm(c: Cargo): CargoForm {
   };
 }
 
+function cargoImportadoParaForm(c: CargoImportado): CargoForm {
+  return {
+    id: c.id,
+    nome: c.nome,
+    vagas: String(c.vagas),
+    cadastro_reserva: c.cadastro_reserva,
+    carga: c.carga_horaria_semanal?.toString() ?? "",
+    salario: numeroParaInput(c.salario),
+    taxa: numeroParaInput(c.taxa_inscricao),
+    requisitos: c.requisitos ?? "",
+    principal: false,
+  };
+}
+
 const inteiroOuNull = (t: string) => (t.trim() === "" ? null : Number(t));
 const textoOuNull = (t: string) => (t.trim() === "" ? null : t.trim());
 
-export function FormConcurso({ concurso }: Props) {
+export function FormConcurso({ concurso, iaAberto = false }: Props) {
   const [municipio, setMunicipio] = useState(concurso?.municipio ?? "");
   const [uf, setUf] = useState(concurso?.uf ?? "");
   const [orgao, setOrgao] = useState(concurso?.orgao ?? "");
@@ -71,6 +92,8 @@ export function FormConcurso({ concurso }: Props) {
       ? [...concurso.cargos].sort((a, b) => a.ordem - b.ordem).map(cargoParaForm)
       : [cargoVazio(true)],
   );
+  /** Matérias vindas do JSON: gravadas junto com o concurso (mescladas por nome). */
+  const [materias, setMaterias] = useState<MateriaImport[]>([]);
 
   const [erros, setErros] = useState<Record<string, string>>({});
   const [mensagem, setMensagem] = useState<string | null>(null);
@@ -93,7 +116,45 @@ export function FormConcurso({ concurso }: Props) {
     });
   }
 
+  /** Preenche com o que veio do JSON; campos que o chat não achou ficam como estão. */
+  function aplicarIA(d: EditalConvertido): string {
+    if (d.municipio) setMunicipio(d.municipio);
+    if (d.uf) setUf(d.uf);
+    if (d.orgao) setOrgao(d.orgao);
+    if (d.banca) setBanca(d.banca);
+    if (d.inscricao_fim) setInscricaoFim(d.inscricao_fim);
+    if (d.prova_data) setProvaData(d.prova_data);
+    // Na edição o status pode já estar adiante (prova realizada…): só define em concurso novo.
+    if (!concurso) setStatus(d.status);
+    // Na edição as notas existentes ficam; o que veio do edital entra no fim.
+    if (d.observacoes) {
+      setObservacoes((o) => (concurso && o.trim() ? `${o.trim()}\n\n${d.observacoes}` : d.observacoes!));
+    }
+
+    // Cargo com o mesmo nome de um já preenchido é reaproveitado (e as matérias apontam para ele).
+    const atuais = cargos.filter((c) => c.nome.trim());
+    const porNome = new Map(atuais.map((c) => [normalizaNome(c.nome), c.id]));
+    const idFinal = new Map<string, string>();
+    const novos: CargoForm[] = [];
+    for (const c of d.cargos) {
+      const existente = porNome.get(normalizaNome(c.nome));
+      if (existente) idFinal.set(c.id, existente);
+      else {
+        novos.push(cargoImportadoParaForm(c));
+        porNome.set(normalizaNome(c.nome), c.id);
+      }
+    }
+    const lista = [...atuais, ...novos];
+    if (lista.length && !lista.some((c) => c.principal)) lista[0] = { ...lista[0], principal: true };
+    setCargos(lista.length ? lista : [cargoVazio(true)]);
+    setMaterias(d.materias.map((m) => ({ ...m, cargo_id: m.cargo_id && (idFinal.get(m.cargo_id) ?? m.cargo_id) })));
+
+    const nTopicos = d.materias.reduce((s, m) => s + m.topicos.length, 0);
+    return `Preenchido: ${d.cargos.length} cargo(s), ${d.materias.length} matéria(s), ${nTopicos} tópico(s).`;
+  }
+
   function montarPayload() {
+    const ids = new Set(cargos.map((c) => c.id));
     return {
       id: concurso?.id,
       municipio,
@@ -116,6 +177,8 @@ export function FormConcurso({ concurso }: Props) {
         requisitos: textoOuNull(c.requisitos),
         principal: c.principal,
       })),
+      // Cargo removido do formulário: a matéria fica no concurso, sem cargo.
+      materias: materias.map((m) => ({ ...m, cargo_id: m.cargo_id && ids.has(m.cargo_id) ? m.cargo_id : null })),
     };
   }
 
@@ -143,6 +206,8 @@ export function FormConcurso({ concurso }: Props) {
   const err = (k: string) => erros[k];
 
   return (
+    <>
+    <PainelIA aberto={iaAberto} onAplicar={aplicarIA} />
     <form onSubmit={enviar} noValidate className="space-y-8">
       <Secao titulo="Lugar">
         <div className="grid gap-4 sm:grid-cols-[1fr_6rem]">
@@ -339,6 +404,48 @@ export function FormConcurso({ concurso }: Props) {
         </button>
       </Secao>
 
+      {materias.length > 0 && (
+        <Secao
+          titulo="Matérias de estudo"
+          descricao={
+            concurso
+              ? "Entram no checklist ao salvar. Matéria com o mesmo nome de uma existente ganha só os tópicos novos."
+              : "Entram no checklist de estudo ao salvar."
+          }
+        >
+          <ul className="border-t border-pauta">
+            {materias.map((m, i) => (
+              <li key={`${m.nome}-${i}`} className="entrar flex items-start gap-3 border-b border-pauta">
+                <details className="group min-w-0 flex-1">
+                  <summary className="flex cursor-pointer list-none items-baseline gap-3 py-1.5 text-sm hover:bg-papel-2">
+                    <span className="text-tinta-2 transition-transform group-open:rotate-90">›</span>
+                    <span className="flex-1">{m.nome}</span>
+                    <span className="num text-xs text-tinta-2">
+                      {m.topicos.length} {m.topicos.length === 1 ? "tópico" : "tópicos"}
+                    </span>
+                  </summary>
+                  {m.topicos.length > 0 && (
+                    <ol className="mb-2 ml-6 list-decimal space-y-0.5 pl-4 text-xs text-tinta-2 marker:font-mono">
+                      {m.topicos.map((t, j) => (
+                        <li key={j}>{t}</li>
+                      ))}
+                    </ol>
+                  )}
+                </details>
+                <button
+                  type="button"
+                  onClick={() => setMaterias((ms) => ms.filter((_, j) => j !== i))}
+                  className="botao-texto inline-flex shrink-0 items-center gap-1 py-1.5 text-xs"
+                  aria-label={`Não importar ${m.nome}`}
+                >
+                  <X size={13} strokeWidth={1.5} /> remover
+                </button>
+              </li>
+            ))}
+          </ul>
+        </Secao>
+      )}
+
       <div className="sticky bottom-0 -mx-4 flex items-center gap-4 border-t border-pauta bg-papel px-4 py-3 md:-mx-6 md:px-6">
         <button className="botao botao-primario" disabled={pending} aria-busy={pending}>
           <Girando ativo={pending} />
@@ -352,5 +459,6 @@ export function FormConcurso({ concurso }: Props) {
         </p>
       </div>
     </form>
+    </>
   );
 }

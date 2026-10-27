@@ -16,51 +16,35 @@
 - Alternativa automática: se OSRM falhar e `ORS_API_KEY` existir, usa OpenRouteService `POST /v2/matrix/driving-car` (free) — `provedor = 'ors'`.
 - Timeout de 10s; erro grava `concurso_distancias.erro`, não bloqueia salvar.
 
-## pdf.js (extração de texto)
+## Prompt para chat gratuito (`src/lib/edital/prompt.ts`)
 
-- `pdfjs-dist` 6 no cliente, importado sob demanda; `GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url)` (Turbopack emite o asset). `loadingTask.destroy()` ao final.
-- Concatenar texto página a página (`getTextContent`), preservando quebras por `hasEOL`.
-- Texto com < ~200 caracteres não-espaço ⇒ tratar como PDF escaneado.
-
-## Regex do edital (`src/lib/edital/regex.ts`)
-
-Heurísticas, sempre revisadas pelo usuário. Cada extrator retorna `{ valor, trecho }` para mostrar de onde veio.
-
-- Datas: `dd/mm/aaaa` e "dd de <mês> de aaaa" próximas de "inscriç", "prova objetiva", "aplicação".
-- Salário: `R\$\s?[\d.]+,\d{2}` perto de "vencimento", "remuneração", "salário".
-- Carga horária: `(\d{2})\s?h(oras)?\s?(semanais)?`.
-- Taxa: `R\$` perto de "taxa de inscrição".
-- Banca: lista de bancas conhecidas (FGV, Cebraspe, FCC, Vunesp, IBFC, Quadrix, Fundatec, Objetiva, Legalle, FEPESE, Instituto AOCP, IDECAN, Consulplan...) + "organizadora".
-
-## Prompt para LLM gratuito (`src/lib/edital/prompt.ts`)
-
-O usuário copia o prompt + texto do edital e cola no ChatGPT/Claude gratuito. O prompt pede **somente o cargo de interesse** (mais de um item só se o mesmo cargo tiver variações, ex.: 20h/40h; cargo inexistente ⇒ listas vazias) e o conteúdo programático dele. Exige **apenas JSON**, neste formato (validado por Zod em `src/lib/schemas/importacao.ts`):
+Sem API de IA e sem leitura de PDF no app. O painel "Preencher com IA" do formulário gera o prompt com o **cargo de interesse**; o usuário cola no ChatGPT/Gemini/Claude gratuito e **anexa o PDF** na mesma mensagem (escaneado também serve). O prompt pede o cargo de interesse + correlatos (mesma formação no requisito ou mesma área; não "qualquer curso superior"), campos gerais mesmo sem cargo, nada inventado (null), datas AAAA-MM-DD, valores como número, prova "prevista" marcada, matérias por cargo com categoria/nº de questões/peso e tópicos copiados do edital, e trechos de conferência. **Apenas JSON**, dentro de um bloco ```` ```json ```` (o botão "Copiar código" do bloco dá o texto limpo):
 
 ```json
 {
+  "orgao": "Prefeitura de Ijuí", "banca": "Fundatec", "uf": "RS", "cidade": "Ijuí",
+  "inscricoes_inicio": "2026-10-20", "inscricoes_ate": "2026-11-19",
+  "data_prova": "2026-12-14", "data_prova_prevista": true, "local_prova": null,
   "cargos": [
     {
-      "nome": "Médico Veterinário",
-      "vagas": 1,
-      "cadastro_reserva": true,
-      "carga_horaria": 40,
-      "salario": 8500.00,
-      "requisitos": "Graduação em Medicina Veterinária e registro no CRMV"
+      "nome": "Médico Veterinário", "escolaridade": "superior",
+      "requisitos": "Medicina Veterinária e CRMV", "vagas": 1, "cadastro_reserva": true,
+      "salario": 8500.00, "carga_horaria_semanal": 40, "taxa_inscricao": 150,
+      "etapas": ["Prova objetiva", "Títulos"],
+      "materias": [
+        { "nome": "Língua Portuguesa", "categoria": "portugues", "num_questoes": 10, "peso": 1,
+          "topicos": ["Interpretação de texto", "Crase"] }
+      ]
     }
   ],
-  "materias": [
-    { "nome": "Língua Portuguesa", "topicos": ["Interpretação de texto", "Crase"] }
-  ]
+  "trecho_fonte": { "data_prova": "...", "inscricoes_ate": "..." },
+  "observacoes": null
 }
 ```
 
-Regras do parser (`lib/edital/json.ts` + `importacaoJsonSchema`): remover cercas ```` ```json ````, recortar do primeiro `{` ao último `}`, trocar aspas tipográficas; aceitar números como string ("8.500,00", "40h", "1"), `cadastro_reserva` como "sim"/"não", tópicos vazios descartados. Erros com caminho (`cargos[0].nome: nome vazio`) e linha/coluna em JSON malformado.
+Parser (`lib/edital/json.ts` + `editalJsonSchema` em `lib/schemas/importacao.ts`): remove cercas ```` ```json ````, recorta do primeiro `{` ao último `}`; tenta o texto como veio e, só se não abrir, desfaz o Markdown do botão "copiar" da mensagem do ChatGPT (`` no fim da linha, `&#x20;`, `www.`) e/ou troca aspas tipográficas usadas como delimitador (aspas “ ” dentro de um texto são válidas e ficam); aceita `"cargo"` no singular, `carga_horaria` (nome antigo), números como string ("8.500,00", "40h"), "sim"/"não", datas dd/mm/aaaa, UF em minúsculas e `materias` fora dos cargos (formato antigo). Erros com caminho (`cargos[0].nome: nome vazio`) e linha/coluna em JSON malformado.
 
-**Tamanho do trecho** (`recortarTexto`, edital > 12 mil caracteres): Curto 12k · Médio 25k (padrão) · Longo 50k · Completo. Preenche por prioridade: conteúdo programático (bloco do cargo, até 60% do limite) → trechos ao redor do cargo → começo do edital (quadro de cargos); o que sobra é completado em sequência. Saída na ordem do documento, com `[...]` entre trechos.
-
-**Em várias mensagens** (`gerarPartes`): para o ChatGPT gratuito, que recusa mensagens longas. 1ª mensagem = regras; depois partes de ~10 mil caracteres ("responda apenas OK"); a última pede o JSON. A tela tem um botão "Copiar" por mensagem e avisa para **não anexar o PDF** (o texto já vai no prompt). Link para o Gemini, que aceita textos maiores.
-
-**PDF escaneado:** o prompt pede para anexar o PDF na conversa (ChatGPT e Claude gratuitos aceitam arquivo).
+Conversão (`lib/edital/converter.ts`): `cidade` → município; status pelas datas (antes do início = edital publicado, entre início e fim = inscrições abertas, depois = encerradas); `vagas: null` → 0; matérias de todos os cargos juntadas por nome (tópicos sem repetir), ligadas ao primeiro cargo onde apareceram (`materias.cargo_id`); campos sem coluna (início das inscrições, prova prevista, local, escolaridade, etapas, nº de questões/peso, trechos, observações do chat) vão para `concursos.observacoes` (até 4000 caracteres). `categoria` é validada mas não gravada.
 
 ## Provas anteriores (`src/lib/provas/busca.ts`)
 

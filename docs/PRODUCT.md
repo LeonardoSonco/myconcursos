@@ -54,11 +54,15 @@ Colunas, nesta ordem:
 
 ## Importação de edital
 
-1. Upload do PDF; texto extraído no navegador com pdf.js.
-2. Regex tenta extrair: datas de inscrição e prova, salário, carga horária, taxa, banca. Formulário pré-preenchido para conferência.
-3. Texto vazio (PDF escaneado): avisar e ir direto ao passo 4.
-4. Gerar prompt com botão "copiar" para colar em ChatGPT/Claude gratuito, pedindo **somente JSON** com cargos e conteúdo programático do cargo indicado.
-5. Campo para colar a resposta: remove crases de bloco de código, valida com Zod, mostra prévia, só então salva. Erro de validação exibido de forma clara (caminho do campo + mensagem).
+Painel **"Preencher com IA"** no formulário do concurso (aberto em "Novo concurso", recolhido em "Editar"). O app não lê o PDF: quem lê é um chat gratuito (ChatGPT, Gemini, Claude).
+
+1. Usuário informa o cargo de interesse; o app gera o prompt (botão "Copiar prompt" + links para os chats).
+2. No chat: cola o prompt e **anexa o PDF do edital** (escaneado também serve).
+3. Cola a resposta no painel → "Preencher o formulário": remove crases de bloco de código, valida com Zod e preenche município/UF, órgão, banca, prazo, data da prova, status (pelas datas de inscrição; só em concurso novo), cargos (o de interesse + correlatos) e observações (início das inscrições, prova prevista, local, escolaridade, etapas, nº de questões/peso, trechos de conferência). Erro de validação com caminho do campo + mensagem.
+4. As matérias e tópicos de todos os cargos aparecem na seção "Matérias de estudo" (uma por nome, tópicos sem repetir; dá para remover). Ao salvar, entram no checklist; na edição, matéria com o mesmo nome de uma existente ganha só os tópicos novos.
+5. Na edição, cargo com o mesmo nome de um já cadastrado não é duplicado; observações do edital entram no fim das existentes.
+
+`/concursos/importar` redireciona para "Novo concurso".
 
 ## Checklist de estudo
 

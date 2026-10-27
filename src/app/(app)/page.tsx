@@ -45,9 +45,6 @@ export default async function ConcursosPage({ searchParams }: PageProps<"/">) {
           </p>
         </div>
         <div className="ml-auto flex items-center gap-3">
-          <Link href="/concursos/importar" className="botao">
-            Importar edital
-          </Link>
           <Link href="/concursos/novo" className="botao botao-primario">
             Novo concurso
           </Link>

@@ -8,7 +8,7 @@ export default function NovoConcursoPage() {
         ← Concursos
       </Link>
       <h1 className="mt-2 mb-8 font-serif text-3xl tracking-tight">Novo concurso</h1>
-      <FormConcurso />
+      <FormConcurso iaAberto />
     </div>
   );
 }

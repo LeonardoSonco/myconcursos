@@ -69,7 +69,6 @@ export async function criarMateria(
       supabase,
       concursoId,
       [{ nome: n.data, topicos: linhasParaTopicos(topicosTexto) }],
-      null,
     );
     revalidar(concursoId);
     return {
@@ -100,7 +99,7 @@ export async function adicionarTopicos(
   const topicos = linhasParaTopicos(texto);
   if (!topicos.length) return { ok: false, mensagem: "Escreva ao menos um tópico." };
   try {
-    const r = await adicionarMaterias(supabase, concursoId, [{ nome: materia.nome, topicos }], null);
+    const r = await adicionarMaterias(supabase, concursoId, [{ nome: materia.nome, topicos }]);
     revalidar(concursoId);
     return { ok: true, mensagem: `${r.topicos} tópico(s) adicionado(s).` };
   } catch (e) {

@@ -10,7 +10,7 @@ Sistema web pessoal (2 usuários) para organizar concursos públicos: cadastro d
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Stack, estrutura de pastas, fluxo de dados, decisões |
 | [docs/DATABASE.md](docs/DATABASE.md) | Tabelas, RLS, views, como criar migrations |
 | [docs/DESIGN.md](docs/DESIGN.md) | Identidade visual "fichário de concurseiro", tokens, componentes |
-| [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md) | Nominatim, OSRM/ORS, pdf.js, prompt para LLM gratuito |
+| [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md) | Nominatim, OSRM/ORS, prompt + JSON do edital (chat gratuito), scraper |
 | [docs/SETUP.md](docs/SETUP.md) | Variáveis de ambiente, Supabase, Vercel |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Etapas, status atual e próximos passos |
 

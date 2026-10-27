@@ -4,7 +4,7 @@ import { normalizaNome } from "@/lib/format";
 import type { Database } from "@/types/database";
 
 type Db = SupabaseClient<Database>;
-type MateriaNova = { nome: string; topicos: string[] };
+type MateriaNova = { nome: string; topicos: string[]; cargo_id?: string | null };
 
 /**
  * Adiciona matérias/tópicos a um concurso. Matéria com mesmo nome normalizado
@@ -14,7 +14,6 @@ export async function adicionarMaterias(
   supabase: Db,
   concursoId: string,
   materias: MateriaNova[],
-  cargoId: string | null,
 ): Promise<{ materias: number; topicos: number }> {
   if (!materias.length) return { materias: 0, topicos: 0 };
 
@@ -35,7 +34,7 @@ export async function adicionarMaterias(
     let alvo = porNome.get(chave);
     if (!alvo) {
       const id = crypto.randomUUID();
-      novasMaterias.push({ id, concurso_id: concursoId, cargo_id: cargoId, nome: m.nome, ordem: proximaOrdem++ });
+      novasMaterias.push({ id, concurso_id: concursoId, cargo_id: m.cargo_id ?? null, nome: m.nome, ordem: proximaOrdem++ });
       alvo = { id, nome_normalizado: chave, ordem: 0, topicos: [] };
       // Se o próprio JSON repetir a matéria, a segunda ocorrência é mesclada nesta.
       porNome.set(chave, alvo);

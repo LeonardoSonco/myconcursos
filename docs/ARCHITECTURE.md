@@ -9,7 +9,7 @@
 | Banco/Auth | Supabase free (Postgres + Auth e-mail/senha) | RLS resolve compartilhado vs. individual no próprio banco |
 | Deploy | Vercel Hobby | Grátis, integra com GitHub |
 | Validação | Zod 4 | Mesmo schema no form (cliente) e na Server Action (servidor) |
-| PDF | pdfjs-dist no navegador | Sem custo de servidor, PDF não sai da máquina |
+| Edital | Prompt para chat gratuito + JSON colado | O usuário anexa o PDF no ChatGPT/Gemini; o app não lê PDF nem usa API de IA |
 | Geo | Nominatim + OSRM público | Grátis; chamados só no servidor, só ao salvar |
 
 ## Estrutura de pastas
@@ -34,7 +34,7 @@ myconcursos/
 │  │     ├─ page.tsx             # tabela principal de concursos
 │  │     ├─ concursos/
 │  │     │  ├─ novo/page.tsx
-│  │     │  ├─ importar/page.tsx # fluxo de importação de edital
+│  │     │  ├─ importar/page.tsx # redireciona para novo (importação virou o painel do form)
 │  │     │  └─ [id]/
 │  │     │     ├─ page.tsx       # detalhe (cargos, distâncias)
 │  │     │     ├─ editar/page.tsx
@@ -50,8 +50,7 @@ myconcursos/
 │  │  └─ ajustes.ts
 │  ├─ components/
 │  │  ├─ ui/                     # Carimbo, PrazoInscricao/DataProva, TemaToggle, Secao/Campo, Progresso
-│  │  ├─ concursos/              # TabelaConcursos (tabela + cards mobile), FormConcurso, BotaoExcluir
-│  │  ├─ importacao/             # ImportarEdital (5 passos: PDF, conferir, prompt, resposta, salvar)
+│  │  ├─ concursos/              # TabelaConcursos (tabela + cards mobile), FormConcurso, PainelIA (prompt + JSON), BotaoExcluir
 │  │  ├─ estudo/                 # ChecklistEstudo (matérias, tópicos, marcação otimista)
 │  │  ├─ provas/                 # ProvasAnteriores (links de busca + provas guardadas)
 │  │  └─ participacao/           # MinhaParticipacao (inscrição, custo, resultado)
@@ -60,9 +59,9 @@ myconcursos/
 │  │  ├─ status.ts               # enum de status, rótulos, UFs
 │  │  ├─ supabase/{server,proxy}.ts  # @supabase/ssr (client.ts quando precisar no navegador)
 │  │  ├─ concursos/{gravar,materias}.ts  # server-only: gravar concurso+cargos; mesclar matérias/tópicos
-│  │  ├─ schemas/                # Zod: concurso (+cargo), importacao (JSON e payload), cidade-base
+│  │  ├─ schemas/                # Zod: concurso (+cargo), importacao (JSON do chat e matérias do form), cidade-base
 │  │  ├─ geo/{nominatim,rotas,distancias,tipos}.ts  # server-only
-│  │  ├─ edital/{pdf,regex,prompt,json}.ts       # pdf/regex/prompt no cliente
+│  │  ├─ edital/{prompt,json,converter}.ts       # cliente: prompt, parser do JSON, JSON -> campos do form
 │  │  └─ format.ts               # moeda, datas, km, contagem de prazo
 │  └─ types/database.ts          # tipos do banco (escrito à mão; pode ser gerado pelo CLI)
 └─ .env.local                    # não versionado
@@ -85,12 +84,11 @@ myconcursos/
 - "Recalcular distâncias" (detalhe) força nova geocodificação. "Recalcular todas" (Ajustes) geocodifica até 20 concursos sem coordenadas por vez e refaz todas as colunas; página com `maxDuration = 60`.
 - Fila do Nominatim é por processo (memória). Suficiente para 2 usuários; não é um rate limit global entre instâncias serverless.
 
-**Importação.** Tudo no cliente até a confirmação: pdf.js → regex → prompt → JSON colado → Zod → prévia. Só o "Salvar" chama a Server Action `salvarImportacao`.
+**Importação.** Tudo no cliente até salvar: prompt (`lib/edital/prompt.ts`) → usuário anexa o PDF num chat gratuito → JSON colado → `interpretarRespostaIA` (Zod) → `converterEdital` preenche o `FormConcurso` e a lista de matérias. O "Salvar" normal (`salvarConcurso`) grava concurso + cargos e depois as matérias (`adicionarMaterias`, mescla por nome).
 
-- Regex devolve até 5 **candidatos** por campo, cada um com o trecho de origem; o 1º preenche o form, os outros viram botões.
-- Sem JSON, salva um cargo montado com o "cargo de interesse" + vagas/horas/salário/taxa do passo 2. Taxa (regex) vale para todos os cargos do JSON.
-- Destino novo: reaproveita `gravarConcurso` (mesmo caminho do formulário) + distâncias. Destino existente: cargos com mesmo nome normalizado são reaproveitados; matérias com mesmo nome recebem só tópicos novos (`adicionarMaterias`).
-- Matérias ficam ligadas (`materias.cargo_id`) ao cargo escolhido na prévia (padrão: o que bate com o cargo de interesse).
+- Preenche só os campos que o chat achou; o resto do formulário fica como estava. Na edição: status não muda, cargo com mesmo nome normalizado é reaproveitado, observações do edital vão para o fim.
+- Matérias de todos os cargos viram uma lista (uma por nome) ligada (`materias.cargo_id`) ao primeiro cargo onde apareceram; cargo removido do form antes de salvar ⇒ `cargo_id` null.
+- Matérias são gravadas depois do concurso e das distâncias; se falharem, o concurso já está salvo e a mensagem avisa para não salvar de novo.
 - `normalizaNome` (TS, `lib/format.ts`) espelha `public.normaliza_nome` (SQL).
 
 **Estudo.** A página carrega `materias → topicos → topico_progresso` num select aninhado; o RLS devolve só o progresso do usuário logado (embutido não sofre o limite de 1000 linhas do PostgREST). Marcar = upsert/delete em `topico_progresso` via `marcarTopicos` (lote, até 500 ids), com `useOptimistic` no cliente. Criar matéria/tópicos reaproveita `adicionarMaterias` (mescla por nome normalizado, sem duplicar tópico).

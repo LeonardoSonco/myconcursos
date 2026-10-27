@@ -35,6 +35,8 @@ Regra: concluir uma etapa, mostrar ao usuário, esperar aprovação, atualizar e
 - [x] Gerador de prompt com "copiar"; modo enxuto para editais > 60 mil caracteres
 - [x] Parser de JSON colado (tolerante) + Zod + prévia + salvar em concurso novo ou existente (mescla cargos/matérias por nome)
 
+- [x] **Refeita em 2026-10-27:** sem pdf.js/regex. Painel "Preencher com IA" no formulário (novo e editar): prompt com cargo de interesse + correlatos, usuário anexa o PDF no chat, JSON preenche concurso, cargos e matérias de estudo. `/concursos/importar` redireciona para novo — ✅ entregue (aguardando aprovação)
+
 ## Etapa 5 — Checklist e Matérias em comum — ✅ entregue (aguardando aprovação)
 
 - [x] Tela de estudo por concurso (`/concursos/[id]/estudo`); criar/renomear/excluir matéria, adicionar (várias linhas)/excluir tópicos
