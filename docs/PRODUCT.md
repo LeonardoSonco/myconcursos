@@ -107,4 +107,5 @@ Feed em `/oportunidades` com concursos **abertos** e **previstos** da região Su
 - Filtros: situação, UF (PR/RS/SC; BR = nacionais), distância máxima de uma cidade base, busca (órgão/cidade/cargo), mostrar estágios (ocultos por padrão). Ordem: mais perto, prazo, salário, mais recentes. Abertos com prazo vencido somem.
 - **Descartar** (compartilhado entre os dois usuários) esconde o item; "Descartadas" permite restaurar.
 - **Acompanhar**: confirma município/UF e cria o concurso (status previsto / inscrições abertas / edital publicado, prazo, link, observações com cargos e salário), calcula as distâncias de carro e abre a edição para completar cargos. O item passa a mostrar "No fichário".
-- Avisos "já há concurso nesta cidade" e "também na outra fonte" (mesmo órgão/UF) — não funde automaticamente.
+- **Mesmo concurso nas duas fontes vira um card só**, com os links das duas; cada campo vem da fonte que o tem (prazo e cargos do PCI, data da notícia do CNB). Descartar/acompanhar vale para o card inteiro. Só junta quando é certo: mesmo órgão (Câmara ≠ Prefeitura), UF, situação e estágio, com exatamente um item de cada fonte.
+- Avisos "já há concurso nesta cidade" e "também na outra fonte" (mesmo órgão nas duas, mas com vários editais e sem par certo — fica separado).

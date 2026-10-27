@@ -6,6 +6,7 @@ import { parseCnb } from "./fontes/cnb";
 import { parsePci } from "./fontes/pci";
 import { dataBR, deduplicar, extrairCidade, salarioMax, vagas } from "./texto";
 import { validar } from "./tipos";
+import { agruparFontes, chaveOrgao } from "../../src/lib/oportunidades";
 
 const fixture = (nome: string) => readFileSync(new URL(`./fixtures/${nome}`, import.meta.url), "utf8");
 const HOJE = new Date("2026-10-27T12:00:00Z");
@@ -79,6 +80,47 @@ test("CNB: previsto pela marcação, nacional sem UF, antigo descartado", () => 
   assert.equal(bage.cidade, "Bagé");
   assert.equal(bage.salario_max, 3800);
   assert.equal(bage.publicado_em, "2026-10-09");
+});
+
+test("mesmo concurso nas duas fontes vira um grupo (casos reais de 2026-10-27)", () => {
+  const op = (fonte: "pci" | "cnb", orgao: string, uf: string | null = "RS") => ({
+    fonte,
+    orgao,
+    uf,
+    situacao: "aberto",
+    estagio: false,
+  });
+  const grupos = agruparFontes([
+    op("cnb", "Câmara de Ijuí"),
+    op("pci", "Câmara de Ijuí"),
+    op("pci", "Prefeitura de Ijuí"),
+    op("cnb", "Prefeitura Municipal de Ijuí"),
+    op("pci", "PREVIJUÍ - Instituto de Previdência dos Servidores Públicos do Município de Ijuí"),
+    op("cnb", "PREVIJUÍ"),
+    op("pci", "UEL - Universidade Estadual de Londrina", "PR"),
+    op("cnb", "UEL", "PR"),
+    // vários seletivos do mesmo órgão: não dá para parear, ficam separados
+    op("pci", "Prefeitura de Igrejinha"),
+    op("pci", "Prefeitura de Igrejinha"),
+    op("cnb", "Prefeitura de Igrejinha"),
+    // mesma fonte duas vezes também não junta
+    op("cnb", "HCPA"),
+    op("cnb", "HCPA"),
+    // mesmo nome em outro estado
+    op("pci", "Prefeitura de Tijucas", "SC"),
+    op("cnb", "Prefeitura de Tijucas", "PR"),
+  ]);
+  const juntos = grupos.filter((g) => g.length === 2);
+  assert.deepEqual(
+    juntos.map((g) => g.map((o) => o.fonte)),
+    [["pci", "cnb"], ["pci", "cnb"], ["pci", "cnb"], ["pci", "cnb"]],
+  );
+  assert.deepEqual(
+    juntos.map((g) => g[1].orgao),
+    ["Câmara de Ijuí", "Prefeitura Municipal de Ijuí", "PREVIJUÍ", "UEL"],
+  );
+  assert.equal(grupos.length, 4 + 3 + 2 + 2);
+  assert.notEqual(chaveOrgao(op("pci", "Câmara de Ijuí")), chaveOrgao(op("pci", "Prefeitura de Ijuí")));
 });
 
 test("deduplicar mantém a primeira ocorrência", () => {

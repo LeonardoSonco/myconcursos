@@ -20,7 +20,10 @@ export type OportunidadeLinha = Omit<
   distancias: Record<number, number | null>;
   /** Concurso já ligado, ou cadastrado na mesma cidade/UF. */
   concursoMesmoLugar: string | null;
-  /** Mesmo órgão/UF aparece nas duas fontes. */
+  /** Itens do grupo: o mesmo concurso no PCI e no CNB vira um card só (PCI primeiro). */
+  ids: string[];
+  fontes: { fonte: Oportunidade["fonte"]; url: string }[];
+  /** Mesmo órgão nas duas fontes, mas sem par certo (vários editais do órgão). */
   nasDuasFontes: boolean;
 };
 
@@ -309,7 +312,15 @@ function Item({
           </p>
         )}
         <p className="mt-0.5 flex flex-wrap gap-x-3 text-[11px] text-tinta-2">
-          <span>{FONTE_ROTULO[o.fonte]}</span>
+          {o.fontes.length > 1 ? (
+            o.fontes.map((f) => (
+              <a key={f.fonte} href={f.url} target="_blank" rel="noreferrer" className="botao-texto">
+                {FONTE_ROTULO[f.fonte]}
+              </a>
+            ))
+          ) : (
+            <span>{FONTE_ROTULO[o.fonte]}</span>
+          )}
           {o.publicado_em && <span className="num">notícia de {data(o.publicado_em)}</span>}
           {o.nasDuasFontes && <span>também na outra fonte</span>}
           {o.estagio && <span>estágio</span>}
@@ -384,7 +395,7 @@ function Acoes({
 
   function descartar() {
     startTransition(async () => {
-      const r = await descartarOportunidade(o.id, !o.descartada);
+      const r = await descartarOportunidade(o.ids, !o.descartada);
       if (!r.ok) setErro(r.mensagem);
     });
   }
@@ -393,7 +404,7 @@ function Acoes({
     e.preventDefault();
     setErro(null);
     startTransition(async () => {
-      const r = await acompanharOportunidade({ id: o.id, municipio, uf });
+      const r = await acompanharOportunidade({ ids: o.ids, municipio, uf });
       if (!r.ok) setErro(Object.values(r.erros ?? {})[0] ?? r.mensagem);
     });
   }

@@ -5,12 +5,40 @@ import {
   type OportunidadeLinha,
 } from "@/components/oportunidades/tabela-oportunidades";
 import { hojeISO, normalizaNome } from "@/lib/format";
-import { distanciaReta } from "@/lib/oportunidades";
+import { agruparFontes, chaveOrgao, distanciaReta } from "@/lib/oportunidades";
 import { createClient } from "@/lib/supabase/server";
+import type { Oportunidade } from "@/types/database";
 
 export const metadata: Metadata = { title: "Oportunidades · my Concursos" };
 
 const UM_DIA_MS = 86_400_000;
+
+type Lida = Omit<Oportunidade, "geocodificado_em" | "geocode_erro">;
+
+/** Um card por grupo (PCI primeiro): cada campo vem do primeiro item que o tem. */
+function mesclar(g: Lida[]): Lida & Pick<OportunidadeLinha, "ids" | "fontes"> {
+  const primeiro = <K extends keyof Lida>(k: K) => g.find((o) => o[k] != null)?.[k] ?? g[0][k];
+  const comPonto = g.find((o) => o.lat != null && o.lon != null) ?? g[0];
+  return {
+    ...g[0],
+    cidade: primeiro("cidade"),
+    vagas: primeiro("vagas"),
+    vagas_texto: primeiro("vagas") == null ? primeiro("vagas_texto") : null,
+    salario_max: primeiro("salario_max"),
+    cargos_texto: primeiro("cargos_texto"),
+    escolaridade: primeiro("escolaridade"),
+    inscricao_fim: primeiro("inscricao_fim"),
+    publicado_em: primeiro("publicado_em"),
+    lat: comPonto.lat,
+    lon: comPonto.lon,
+    // Descartar/acompanhar vale para o grupo; estado misto (de antes do agrupamento) conta como ativo.
+    descartada: g.every((o) => o.descartada),
+    concurso_id: primeiro("concurso_id"),
+    primeiro_visto_em: g.reduce((m, o) => (o.primeiro_visto_em < m ? o.primeiro_visto_em : m), g[0].primeiro_visto_em),
+    ids: g.map((o) => o.id),
+    fontes: g.map((o) => ({ fonte: o.fonte, url: o.url })),
+  };
+}
 
 export default async function OportunidadesPage() {
   const supabase = await createClient();
@@ -34,14 +62,15 @@ export default async function OportunidadesPage() {
   const concursoPorLugar = new Map(
     (concursosRes.data ?? []).map((c) => [`${normalizaNome(c.municipio)}|${c.uf}`, c.id]),
   );
+  const atuais = ops.filter((o) => o.visto_em >= corte || o.concurso_id);
   const fontesPorOrgao = new Map<string, Set<string>>();
-  for (const o of ops) {
-    const k = `${o.orgao_normalizado}|${o.uf ?? ""}`;
+  for (const o of atuais) {
+    const k = chaveOrgao(o);
     fontesPorOrgao.set(k, (fontesPorOrgao.get(k) ?? new Set()).add(o.fonte));
   }
 
-  const linhas: OportunidadeLinha[] = ops
-    .filter((o) => o.visto_em >= corte || o.concurso_id)
+  const linhas: OportunidadeLinha[] = agruparFontes(atuais)
+    .map(mesclar)
     .map((o) => {
       const ponto = o.lat != null && o.lon != null ? { lat: o.lat, lon: o.lon } : null;
       return {
@@ -56,7 +85,7 @@ export default async function OportunidadesPage() {
         ),
         concursoMesmoLugar:
           o.concurso_id ?? (o.cidade && o.uf ? concursoPorLugar.get(`${normalizaNome(o.cidade)}|${o.uf}`) : null) ?? null,
-        nasDuasFontes: (fontesPorOrgao.get(`${o.orgao_normalizado}|${o.uf ?? ""}`)?.size ?? 0) > 1,
+        nasDuasFontes: o.fontes.length === 1 && (fontesPorOrgao.get(chaveOrgao(o))?.size ?? 0) > 1,
       };
     });
 

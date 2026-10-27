@@ -137,6 +137,7 @@ Pedido em 2026-10-27; substitui a ideia antes descartada ("raspar PCI"). Fontes:
 - [x] Scraper em `scripts/scraper/` (fetch + cheerio, Zod, testes com trechos reais em `fixtures/`); geocodifica cidades novas (até 150 consultas por execução, reaproveita por cidade)
 - [x] GitHub Actions 06h/18h (`.github/workflows/scraper.yml`)
 - [x] Página `/oportunidades`: filtros (situação, UF, distância em linha reta, busca, estágios), descartar/restaurar, "Acompanhar" cria o concurso e abre a edição
+- [x] Mesmo concurso no PCI e no CNB vira um card só (agrupado na página, sem migration; testes com os casos de Ijuí, UEL, Igrejinha)
 - [ ] Configurar no Supabase/GitHub (usuário robô + segredos — ver SETUP.md) e conferir a primeira execução
 
 ## Ideias futuras (não pedidas)
