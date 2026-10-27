@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "next typegen && tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit",
+    "scraper": "tsx scripts/scraper/index.ts",
+    "scraper:local": "tsx --env-file=.env scripts/scraper/index.ts",
+    "test:scraper": "tsx --test scripts/scraper/scraper.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -25,9 +28,11 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cheerio": "^1.2.0",
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

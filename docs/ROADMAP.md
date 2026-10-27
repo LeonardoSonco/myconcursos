@@ -127,9 +127,17 @@ Ordem sugerida: 6 → 7 → 8 → 9 (decisões práticas, rápidas); depois 11 +
 
 - [ ] Exportar tudo em CSV/JSON
 
-### Descartado
+### Bloco E — Descoberta
 
-- Descobrir concursos novos automaticamente raspando PCI/sites de banca (fragilidade + termos de uso; mesma decisão das provas anteriores)
+#### Etapa 20 — Oportunidades (scraper) — ✅ entregue (aguardando aprovação)
+
+Pedido em 2026-10-27; substitui a ideia antes descartada ("raspar PCI"). Fontes: PCI Concursos (`/concursos/sul/`) e Concursos no Brasil (`/concursos/pr|rs|sc/`), ambas com `robots.txt` permitindo.
+
+- [x] Migration `0006_oportunidades.sql`: tabela `oportunidades` + allowlist `robos`; o robô só grava ali (RLS + trigger que protege `descartada`/`concurso_id`)
+- [x] Scraper em `scripts/scraper/` (fetch + cheerio, Zod, testes com trechos reais em `fixtures/`); geocodifica cidades novas (até 150 consultas por execução, reaproveita por cidade)
+- [x] GitHub Actions 06h/18h (`.github/workflows/scraper.yml`)
+- [x] Página `/oportunidades`: filtros (situação, UF, distância em linha reta, busca, estágios), descartar/restaurar, "Acompanhar" cria o concurso e abre a edição
+- [ ] Configurar no Supabase/GitHub (usuário robô + segredos — ver SETUP.md) e conferir a primeira execução
 
 ## Ideias futuras (não pedidas)
 
@@ -145,3 +153,4 @@ Ordem sugerida: 6 → 7 → 8 → 9 (decisões práticas, rápidas); depois 11 +
 | `0003_participacao.sql` | **não — aplicar no SQL Editor** | participação individual (inscrição, hospedagem, resultado) + preferências de viagem |
 | `0004_estudo_avancado.sql` | **não — aplicar no SQL Editor** | sessões de estudo, revisão espaçada (colunas em `topico_progresso`), caderno de erros |
 | `0005_sessao_prova.sql` | **não — aplicar no SQL Editor** | coluna `prova` em `sessoes_estudo` (opção "Prova" no cronômetro) |
+| `0006_oportunidades.sql` | **não — aplicar no SQL Editor** | feed `oportunidades` (scraper) + allowlist `robos` |

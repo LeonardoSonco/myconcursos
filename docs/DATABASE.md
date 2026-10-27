@@ -1,6 +1,6 @@
 # Banco de dados (Supabase / Postgres)
 
-Esquema completo: [`supabase/migrations/0001_init.sql`](../supabase/migrations/0001_init.sql) + [`0002_provas_anteriores.sql`](../supabase/migrations/0002_provas_anteriores.sql) + [`0003_participacao.sql`](../supabase/migrations/0003_participacao.sql) + [`0004_estudo_avancado.sql`](../supabase/migrations/0004_estudo_avancado.sql) + [`0005_sessao_prova.sql`](../supabase/migrations/0005_sessao_prova.sql).
+Esquema completo: [`supabase/migrations/0001_init.sql`](../supabase/migrations/0001_init.sql) + [`0002_provas_anteriores.sql`](../supabase/migrations/0002_provas_anteriores.sql) + [`0003_participacao.sql`](../supabase/migrations/0003_participacao.sql) + [`0004_estudo_avancado.sql`](../supabase/migrations/0004_estudo_avancado.sql) + [`0005_sessao_prova.sql`](../supabase/migrations/0005_sessao_prova.sql) + [`0006_oportunidades.sql`](../supabase/migrations/0006_oportunidades.sql).
 
 ## Diagrama
 
@@ -30,6 +30,8 @@ auth.users ──1:1── membros (allowlist)
 | `participacao` | **individual** | PK (`user_id`, `concurso_id`): `inscrito`, `boleto_pago`, `cartao_confirmacao`, `local_prova`, `hospedagem`, `nota`, `classificacao`, `aprovado` (0003). Linha criada no primeiro clique (upsert parcial) |
 | `preferencias` | **individual** | PK `user_id`: `consumo_km_l`, `preco_combustivel` (0003) |
 | `prova_resolvida` | **individual** | PK (`user_id`, `prova_id`); linha existe = resolvida; `acertos`/`questoes` opcionais (0002) |
+| `robos` | — | allowlist de contas de serviço (`user_id`, `nome`); sem policy = invisível pela API. Gestão pelo SQL Editor (0006) |
+| `oportunidades` | sim (+ robô) | feed raspado: `fonte` (pci/cnb), `url` única, `titulo`, `orgao` (+ `orgao_normalizado` gerado), `uf`/`cidade` (nulas se incertas), `situacao` (aberto/previsto), `estagio`, `vagas`/`vagas_texto`, `salario_max`, `cargos_texto`, `escolaridade`, `inscricao_fim`, `publicado_em`, cache de geocodificação, `primeiro_visto_em`/`visto_em`. Estado dos membros: `descartada`, `concurso_id` (0006) |
 
 Enum `concurso_status`: `previsto`, `edital_publicado`, `inscricoes_abertas`, `inscricoes_encerradas`, `prova_realizada`, `resultado`.
 
@@ -42,6 +44,8 @@ Enum `concurso_status`: `previsto`, `edital_publicado`, `inscricoes_abertas`, `i
 ## Funções
 
 - `is_membro()` — `security definer`, usado nas policies.
+- `is_robo()` — idem, para a conta do scraper (0006).
+- `tg_oportunidade_robo()` — quando quem grava é o robô, mantém `descartada`, `concurso_id` e `primeiro_visto_em` (o robô não mexe no estado dos membros).
 - `normaliza_nome(text)` — imutável; minúsculas, sem acento, só `[a-z0-9 ]`.
 - `tg_set_atualizado_em()` — trigger de `atualizado_em`.
 
@@ -52,6 +56,7 @@ Enum `concurso_status`: `previsto`, `edital_publicado`, `inscricoes_abertas`, `i
 - `topico_progresso`, `prova_resolvida`, `participacao`, `preferencias`, `caderno_erros`: `user_id = auth.uid() and is_membro()`.
 - `sessoes_estudo`: `select` para membros; `insert/update/delete` só `user_id = auth.uid()`. **Ao ler as próprias sessões, filtrar por `user_id`.**
 - `membros`: só `select`; inserir/remover membros pelo SQL Editor.
+- `oportunidades`: membros tudo; robô `select/insert/update` e `delete` só de linhas sem `concurso_id` e fora do site há 30+ dias. O robô **não** está em `membros`, então não enxerga nenhuma outra tabela.
 - Policies usam `(select auth.uid())` / `(select is_membro())` para o Postgres avaliar uma vez por query (recomendação do Supabase).
 
 ## Convenções para mudanças

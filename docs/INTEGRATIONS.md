@@ -64,9 +64,27 @@ Regras do parser (`lib/edital/json.ts` + `importacaoJsonSchema`): remover cercas
 
 ## Provas anteriores (`src/lib/provas/busca.ts`)
 
-Não há API pública gratuita de provas (PCI Concursos, QConcursos, TEC e sites das bancas não oferecem). O app **não** raspa sites: só monta links que o usuário abre em nova aba.
+Não há API pública gratuita de provas (PCI Concursos, QConcursos, TEC e sites das bancas não oferecem). O app **não** raspa provas: só monta links que o usuário abre em nova aba. (A raspagem de listas de concursos é separada — ver "Scraper de oportunidades" abaixo.)
 
 - `https://www.pciconcursos.com.br/provas/<slug-do-cargo>` — slug = `normalizaNome` com hífens (`medico-veterinario`). Pode não existir para cargos com nome incomum.
 - `https://www.pciconcursos.com.br/provas/<slug-da-banca>` — ex.: `/provas/fundatec`.
 - Google `site:pciconcursos.com.br/provas "<cargo>" "<banca>"` — cobre o caso acima de forma robusta.
 - Google `"<cargo>" "<banca>" prova gabarito filetype:pdf` — pega PDFs no site da própria banca.
+
+## Scraper de oportunidades (`scripts/scraper/`)
+
+Roda **fora do app**, no GitHub Actions (`.github/workflows/scraper.yml`, 06h e 18h de Brasília + botão manual). O app só lê a tabela `oportunidades`. HTML estático: `fetch` + `cheerio`, sem navegador. 4 requisições por execução, 2 s entre elas, User-Agent identificável (`SCRAPER_USER_AGENT`). `robots.txt` dos dois sites permite essas páginas.
+
+| Fonte | URL | O que tem |
+|---|---|---|
+| PCI Concursos | `/concursos/sul/` | só **abertos**. Cada `div.na`: `.ca a` (órgão + link + título), `.cc` (UF), `.cd` ("348 vagas até R$ 14.117,18" / cargos / escolaridade), `.ce` (fim da inscrição) |
+| Concursos no Brasil | `/concursos/pr/`, `/rs/`, `/sc/` | tabela Órgão \| Vagas: abertos e, no fim, **previstos** com `div.label-previsto`. Sem salário/prazo: salário sai do título, data da notícia da URL (`/2026/07/29/`) |
+
+- **Normalização** (`texto.ts`, Zod em `tipos.ts`): vagas ("3.360", "Várias"), maior valor em R$ ("R$ 9,5 mil" = 9500), datas, estágio (título com "estágio"/"bolsa").
+- **Cidade**: só quando o título/órgão é municipal — "Prefeitura/Câmara/SAMAE… de <Cidade> - UF" ou "(UF)". Hospitais, universidades e órgãos estaduais ficam sem cidade (sem distância).
+- **Concursos no Brasil**: itens nacionais (CGU, IBGE…) se repetem nos 3 estados → deduplica pela URL, UF nula. Abertos com notícia de mais de **12 meses** são ignorados; previstos ficam enquanto o site listar.
+- **Ciclo de vida**: `visto_em` atualiza a cada execução; a página mostra só o que estava na última coleta. Itens fora do site há 30+ dias e não acompanhados são apagados pelo robô.
+- **Geocodificação**: Nominatim, 1 req/s, até `GEOCODIFICAR_MAX` (150) cidades novas por execução; o resto fica para a próxima. Mesma cidade/UF reaproveita coordenadas já achadas. Não encontrada = marcada com `geocode_erro` e não tenta de novo.
+- **Falhas**: fonte com 0 itens (layout mudou) ou erro de rede → job termina com erro → o GitHub manda e-mail. A outra fonte é gravada mesmo assim.
+- **Testes**: `npm run test:scraper` (trechos reais salvos em `scripts/scraper/fixtures/`). Rodar local sem banco: `SCRAPER_USER_AGENT="..." npm run scraper -- --seco`; gravando no banco: `npm run scraper:local` (lê `.env`). Passo a passo em SETUP.md.
+- **Limites do Actions**: repo privado tem 2000 min/mês (cada execução ~1 min); público é ilimitado. Agendamentos são pausados após 60 dias sem commits no repo — reativar em Actions.

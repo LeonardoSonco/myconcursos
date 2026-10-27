@@ -1,0 +1,33 @@
+# Raspa PCI Concursos e Concursos no Brasil (região Sul) e grava em `oportunidades`.
+# Segredos (Settings > Secrets and variables > Actions): SUPABASE_URL,
+# SUPABASE_PUBLISHABLE_KEY, ROBO_EMAIL, ROBO_SENHA, SCRAPER_USER_AGENT. Ver docs/SETUP.md.
+name: Oportunidades (scraper)
+
+on:
+  schedule:
+    - cron: "0 9,21 * * *" # 06h e 18h de Brasília
+  workflow_dispatch:
+
+concurrency:
+  group: scraper
+  cancel-in-progress: false
+
+jobs:
+  raspar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test:scraper
+      - run: npm run scraper
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          ROBO_EMAIL: ${{ secrets.ROBO_EMAIL }}
+          ROBO_SENHA: ${{ secrets.ROBO_SENHA }}
+          SCRAPER_USER_AGENT: ${{ secrets.SCRAPER_USER_AGENT }}

@@ -1,4 +1,4 @@
-// Escrito à mão espelhando supabase/migrations/ (0001_init … 0004_estudo_avancado).
+// Escrito à mão espelhando supabase/migrations/ (0001_init … 0006_oportunidades).
 // Pode ser substituído por: npx supabase gen types typescript --project-id <id> > src/types/database.ts
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
@@ -10,6 +10,9 @@ export type ConcursoStatus =
   | "inscricoes_encerradas"
   | "prova_realizada"
   | "resultado";
+
+export type OportunidadeFonte = "pci" | "cnb";
+export type OportunidadeSituacao = "aberto" | "previsto";
 
 export type Database = {
   public: {
@@ -442,6 +445,71 @@ export type Database = {
           },
         ];
       };
+      oportunidades: {
+        Row: {
+          id: string;
+          fonte: OportunidadeFonte;
+          url: string;
+          titulo: string;
+          orgao: string;
+          orgao_normalizado: string;
+          uf: string | null;
+          cidade: string | null;
+          situacao: OportunidadeSituacao;
+          estagio: boolean;
+          vagas: number | null;
+          vagas_texto: string | null;
+          salario_max: number | null;
+          cargos_texto: string | null;
+          escolaridade: string | null;
+          inscricao_fim: string | null;
+          publicado_em: string | null;
+          lat: number | null;
+          lon: number | null;
+          geocodificado_em: string | null;
+          geocode_erro: string | null;
+          descartada: boolean;
+          concurso_id: string | null;
+          primeiro_visto_em: string;
+          visto_em: string;
+        };
+        Insert: {
+          id?: string;
+          fonte: OportunidadeFonte;
+          url: string;
+          titulo: string;
+          orgao: string;
+          uf?: string | null;
+          cidade?: string | null;
+          situacao: OportunidadeSituacao;
+          estagio?: boolean;
+          vagas?: number | null;
+          vagas_texto?: string | null;
+          salario_max?: number | null;
+          cargos_texto?: string | null;
+          escolaridade?: string | null;
+          inscricao_fim?: string | null;
+          publicado_em?: string | null;
+          lat?: number | null;
+          lon?: number | null;
+          geocodificado_em?: string | null;
+          geocode_erro?: string | null;
+          descartada?: boolean;
+          concurso_id?: string | null;
+          primeiro_visto_em?: string;
+          visto_em?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["oportunidades"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "oportunidades_concurso_id_fkey";
+            columns: ["concurso_id"];
+            isOneToOne: false;
+            referencedRelation: "concursos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       v_progresso_materia: {
@@ -471,6 +539,7 @@ export type Database = {
     };
     Functions: {
       is_membro: { Args: Record<string, never>; Returns: boolean };
+      is_robo: { Args: Record<string, never>; Returns: boolean };
       normaliza_nome: { Args: { t: string }; Returns: string };
     };
     Enums: { concurso_status: ConcursoStatus };
@@ -497,3 +566,4 @@ export type Participacao = Tabela<"participacao">;
 export type Preferencias = Tabela<"preferencias">;
 export type SessaoEstudo = Tabela<"sessoes_estudo">;
 export type ErroCaderno = Tabela<"caderno_erros">;
+export type Oportunidade = Tabela<"oportunidades">;

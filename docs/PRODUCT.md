@@ -98,3 +98,13 @@ Coluna **Estudo** (e linha na ficha mobile) com a barra de progresso do usuário
 - **Caderno de erros**: em cada prova guardada, "caderno de erros (n)" — número da questão, matéria, o que errou. Em `/estudo`, todos os erros agrupados por matéria, com "revisado" (risca) e opção de ver os revisados.
 - **Horas estudadas** em `/estudo`: barras dos últimos 7 dias para cada um dos dois usuários (mesma escala), totais de 7 e 28 dias.
 - **Desempenho por matéria** em `/estudo`: % de tópicos, horas, erros abertos; destaque "atenção" com 3+ erros não revisados ou menos de 25% estudado.
+
+## Oportunidades
+
+Feed em `/oportunidades` com concursos **abertos** e **previstos** da região Sul, coletados 2x/dia do PCI Concursos e do Concursos no Brasil.
+
+- Por item: órgão (link para a notícia), cidade/UF quando identificável (nacionais sem UF), carimbo Aberto/Previsto, vagas, salário máximo, distância em linha reta de cada cidade base, prazo de inscrição (só PCI), fonte e data da notícia.
+- Filtros: situação, UF (PR/RS/SC; BR = nacionais), distância máxima de uma cidade base, busca (órgão/cidade/cargo), mostrar estágios (ocultos por padrão). Ordem: mais perto, prazo, salário, mais recentes. Abertos com prazo vencido somem.
+- **Descartar** (compartilhado entre os dois usuários) esconde o item; "Descartadas" permite restaurar.
+- **Acompanhar**: confirma município/UF e cria o concurso (status previsto / inscrições abertas / edital publicado, prazo, link, observações com cargos e salário), calcula as distâncias de carro e abre a edição para completar cargos. O item passa a mostrar "No fichário".
+- Avisos "já há concurso nesta cidade" e "também na outra fonte" (mesmo órgão/UF) — não funde automaticamente.

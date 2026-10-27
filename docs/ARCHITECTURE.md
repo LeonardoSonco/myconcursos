@@ -18,6 +18,8 @@
 myconcursos/
 ├─ CLAUDE.md                     # guia do assistente (aponta para docs/)
 ├─ docs/                         # fonte de verdade do projeto
+├─ .github/workflows/scraper.yml # cron 06h/18h do scraper de oportunidades
+├─ scripts/scraper/              # scraper (Node + tsx, fora do Next): fontes/{pci,cnb}.ts, texto.ts, tipos.ts, geo.ts, index.ts, testes + fixtures/
 ├─ supabase/
 │  ├─ migrations/0001_init.sql   # esquema + RLS (aplicar no SQL Editor)
 │  └─ seed_membros.sql           # cadastra os 2 usuários na allowlist
@@ -38,7 +40,8 @@ myconcursos/
 │  │     │     ├─ editar/page.tsx
 │  │     │     └─ estudo/page.tsx# checklist do concurso
 │  │     ├─ estudo/page.tsx       # visão geral: revisões, horas, desempenho, caderno de erros
-│  │     ├─ materias-em-comum/page.tsx
+│  │     ├─ oportunidades/page.tsx # feed raspado (abertos/previstos do Sul)
+│     ├─ materias-em-comum/page.tsx
 │  │     └─ ajustes/page.tsx     # cidades base
 │  ├─ actions/                   # Server Actions ("use server"), uma por domínio
 │  │  ├─ concursos.ts
@@ -104,11 +107,15 @@ myconcursos/
 
 **Cronômetro.** `RegistroTempo` guarda o cronômetro no `localStorage` (lido com `useSyncExternalStore`) — é só conveniência local; nada vai ao banco até "Encerrar e salvar" (`registrarSessao`).
 
+**Oportunidades.** Escrita só pelo scraper (`scripts/scraper`, GitHub Actions), logado com a chave pública como usuário **robô** (`robos` + RLS) — não é `service_role` e não enxerga outras tabelas. A página `/oportunidades` (Server Component) lê tudo (poucas centenas de linhas), mostra só o que estava na última coleta, calcula a distância **em linha reta** (haversine, `lib/oportunidades.ts`) das cidades base às coordenadas cacheadas pelo scraper e marca "já há concurso nesta cidade" / "também na outra fonte". Filtros no cliente com estado na URL. "Acompanhar" (`actions/oportunidades.ts`) monta o concurso, valida com o mesmo `concursoSchema`, reaproveita `gravarConcurso` + distâncias de carro e liga `oportunidades.concurso_id`.
+
 **Matérias em comum.** Lista de `v_materias_em_comum` + progresso somado no servidor (`materias.nome_normalizado` × `v_progresso_materia`). Matérias de um só concurso ficam num bloco recolhido.
 
 ## Decisões
 
-- **Sem `service_role`.** Tudo roda com a sessão do usuário; o RLS é a única barreira e é suficiente.
+- **Sem `service_role`.** Tudo roda com a sessão do usuário; o RLS é a única barreira e é suficiente. O scraper também: conta robô com senha, chave pública e RLS restrito à tabela `oportunidades`.
+- **Scraper fora do Next.** Vercel Hobby tem cron diário e tempo curto, e o cron não tem sessão. GitHub Actions é grátis, agenda 2x/dia e avisa por e-mail se falhar. Sem servidor próprio: o banco é a interface entre scraper e app.
+- **Distância das oportunidades em linha reta.** Seriam centenas de rotas OSRM a cada coleta; a reta (cache de coordenadas + conta local) basta para triar. A de carro é calculada ao "Acompanhar".
 - **Allowlist `membros`.** Além de desativar o signup, o RLS exige estar na tabela `membros`.
 - **Distância por cidade base em tabela própria** (não colunas fixas), porque as cidades são configuráveis.
 - **Progresso = existência de linha** em `topico_progresso` (marcar = insert, desmarcar = delete). Simples e sem estado inválido.

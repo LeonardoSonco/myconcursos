@@ -24,6 +24,9 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
             <Link href="/" className="botao-texto">
               Concursos
             </Link>
+            <Link href="/oportunidades" className="botao-texto">
+              Oportunidades
+            </Link>
             <Link href="/estudo" className="botao-texto">
               Estudo
             </Link>
